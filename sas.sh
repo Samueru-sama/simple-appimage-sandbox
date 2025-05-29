@@ -77,7 +77,13 @@ DEFAULT_SYS_DIRS="
 	/sbin
 	/sys
 	/tmp
-	/usr
+	/usr/bin
+	/usr/lib
+	/usr/lib32
+	/usr/lib64
+	/usr/local
+	/usr/sbin
+	/usr/share
 "
 
 _cleanup() {
@@ -275,7 +281,9 @@ _make_bwrap_array() {
 	  --setenv XDG_RUNTIME_DIR  /run/user/"$ID"
 
 	for d in $DEFAULT_SYS_DIRS; do
-		set -- "$@" --ro-bind-try "$d" "$d"
+		if [ -d "$d" ]; then
+			set -- "$@" --ro-bind-try "$d" "$d"
+		fi
 	done
 
 	if [ "$SQUASHFS_APPIMAGE" = 1 ] || [ "$DWARFS_APPIMAGE" = 1 ]; then
@@ -316,24 +324,13 @@ _make_bwrap_array() {
 		set -- "$@" --unshare-net
 	fi
 	if [ "$SHARE_APP_THEME" = 1 ]; then
-		set -- "$@" \
-		  --ro-bind-try "$CONFIGDIR"/fontconfig "$CONFIGDIR"/fontconfig \
-		  --ro-bind-try "$CONFIGDIR"/gtk-3.0    "$CONFIGDIR"/gtk-3.0    \
-		  --ro-bind-try "$CONFIGDIR"/gtk-4.0    "$CONFIGDIR"/gtk-4.0    \
-		  --ro-bind-try "$CONFIGDIR"/qt5ct      "$CONFIGDIR"/qt5ct      \
-		  --ro-bind-try "$CONFIGDIR"/qt6ct      "$CONFIGDIR"/qt6ct      \
-		  --ro-bind-try "$CONFIGDIR"/Kvantum    "$CONFIGDIR"/Kvantum    \
-		  --ro-bind-try "$CONFIGDIR"/kdeglobals "$CONFIGDIR"/kdeglobals \
-		  --ro-bind-try "$CONFIGDIR"/lxde       "$CONFIGDIR"/lxde       \
-		  --ro-bind-try "$DATADIR"/themes       "$DATADIR"/themes       \
-		  --ro-bind-try "$DATADIR"/icons        "$DATADIR"/icons        \
-		  --ro-bind-try "$CONFIGDIR"/dconf      "$CONFIGDIR"/dconf      \
-		  --ro-bind-try "$CONFIGDIR"/gtk3.0     "$CONFIGDIR"/gtk3.0     \
-		  --ro-bind-try "$CONFIGDIR"/gtk4.0     "$CONFIGDIR"/gtk4.0     \
-		  --ro-bind-try "$CONFIGDIR"/kdeglobals "$CONFIGDIR"/kdeglobals \
-		  --ro-bind-try "$CONFIGDIR"/qt5ct      "$CONFIGDIR"/qt5ct      \
-		  --ro-bind-try "$CONFIGDIR"/qt6ct      "$CONFIGDIR"/qt6ct      \
-		  --ro-bind-try "$CONFIGDIR"/Kvantum    "$CONFIGDIR"/Kvantum
+		while read -r d; do
+			if [ -e "$d" ]; then
+				set -- "$@" --bind-try "$d" "$d"
+			fi
+		done <<-EOF
+		$THEME_DIRS
+		EOF
 	fi
 	if [ "$SHARE_APP_CONFIG" = 1 ]; then
 		set -- "$@" \
@@ -403,6 +400,23 @@ TMPDIR="${TMPDIR:-/tmp}"
 WDISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 XDISPLAY="${XAUTHORITY:-$RUNDIR/Xauthority}"
 
+# Default dirs to give read access for working theming
+THEME_DIRS="
+	"$CONFIGDIR"/dconf
+	"$CONFIGDIR"/fontconfig
+	"$CONFIGDIR"/gtk-3.0
+	"$CONFIGDIR"/gtk3.0
+	"$CONFIGDIR"/gtk-4.0
+	"$CONFIGDIR"/gtk4.0
+	"$CONFIGDIR"/kdeglobals
+	"$CONFIGDIR"/Kvantum
+	"$CONFIGDIR"/lxde
+	"$CONFIGDIR"/qt5ct
+	"$CONFIGDIR"/qt6ct
+	"$DATADIR"/icons
+	"$DATADIR"/themes
+"
+
 # parse the array
 while :; do
 	case "$1" in
@@ -468,7 +482,7 @@ while :; do
 				xdg-statedir:rw)     ALLOW_STATEDIR=2       ;;
 				xdg-statedir*)       ALLOW_STATEDIR=1       ;;
 				''|-*)
-					_error "No file or directory given $1"
+					_error "No file/directory given to $1"
 					;;
 				# Store each extra file/dir in a new line
 				# new POSIX doesn't allow newline characters
@@ -504,7 +518,7 @@ while :; do
 		--rm-file|--rm-dir)
 			case "$2" in
 				''|-*)
-					_error "No file or directory given $1"
+					_error "No file/directory given to $1"
 					;;
 				*)
 					DEFAULT_SYS_DIRS="$(echo \
