@@ -8,7 +8,7 @@
 
 set -e
 
-VERSION=0.2
+VERSION=0.3
 
 ADD_DIR=""
 ALLOW_BINDIR=0
@@ -50,11 +50,9 @@ MOUNT_POINT=""
 DEPENDENCIES="
 	awk
 	bwrap
-	cut
 	dwarfs
 	grep
 	head
-	id
 	md5sum
 	readelf
 	readlink
@@ -116,6 +114,16 @@ _dep_check() {
 	for d do
 		command -v "$d" 1>/dev/null || _error "Missing dependency $d"
 	done
+}
+
+# get home or id directly from /etc/passwd, replaces id and getent
+_get_sys_info() {
+	case "$1" in
+		home) i=6   ;;
+		id)   i=3   ;;
+		*|'') exit 1;;
+	esac
+	awk -F':' -v U="$USER" -v F="$i" '$1==U {print $F; exit}' /etc/passwd
 }
 
 # POSIX shell doesn't support arrays we use awk to save it into a variable
@@ -222,12 +230,11 @@ _make_fakehome() {
 }
 
 _is_appimage() {
-	if head -c 5242880 "$1" | grep -qa 'DWARFS'; then
+	head="$(head -c 5242880 "$1")"
+	if printf '%s' "$head" | grep -qa 'DWARFS'; then
 		DWARFS_APPIMAGE=1
-		return 0
-	elif head -c 5242880 "$1" | grep -qa 'squashfs'; then
+	elif printf '%s' "$head" | grep -qa 'squashfs'; then
 		SQUASHFS_APPIMAGE=1
-		return 0
 	else
 		return 1
 	fi
@@ -246,8 +253,8 @@ _find_offset() {
 }
 
 _make_mountpoint() {
-	hash1="$(head -c 3145728 "$1" | md5sum | cut -c 1-6)"
-	hash2="$(tail -c 3145728 "$1" | md5sum | cut -c 1-6)"
+	hash1="$(head -c 2097152 "$1" | md5sum | grep -o '^......')"
+	hash2="$(tail -c 1048576 "$1" | md5sum | grep -o '^......')"
 	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
 		_error "ERROR: Something went wrong getting hash from $1"
 	fi
@@ -372,9 +379,21 @@ _make_bwrap_array() {
 _dep_check $DEPENDENCIES
 
 # Make sure we always have the real home
-USER="${LOGNAME:-${USER:-${USERNAME:-$(id -run)}}}"
-HOME="$(getent passwd "$USER" | cut -d':' -f6)"
-ID="$(id -u)"
+USER="${LOGNAME:-${USER:-${USERNAME}}}"
+if [ -f '/etc/passwd' ]; then
+	SAS_HOME="$(_get_sys_info home)"
+	SAS_ID="$(_get_sys_info id)"
+	# export internal variables this way apps with
+	# restricted access to /etc can still use this
+	export SAS_HOME SAS_ID
+fi
+
+HOME="$SAS_HOME"
+ID="$SAS_ID"
+
+if [ -z "$USER" ] || [ -z "$HOME" ] || [ -z "$ID" ]; then
+	_error "This system is fucked up"
+fi
 
 # get xdg vars
 BINDIR="${XDG_BIN_HOME:-~/.local/bin}"
@@ -579,6 +598,7 @@ while :; do
 			;;
 		*|'')
 			if _is_target "$1"; then
+				_make_fakehome
 				# We shift and break here to later pass
 				# the rest of the array to $TO_EXEC
 				shift
@@ -590,15 +610,10 @@ while :; do
 	esac
 done
 
-_make_fakehome
-
 # Check if the app is an appimage, if so find offset and mount
 if _is_appimage "$TARGET"; then
 	_find_offset     "$TARGET"
 	_make_mountpoint "$TARGET"
-fi
-
-if [ -n "$MOUNT_POINT" ]; then
 	if [ -f "$MOUNT_POINT"/AppRun ]; then
 		TO_EXEC="$MOUNT_POINT"/AppRun
 	elif [ -f "$MOUNT_POINT"/Run ]; then
