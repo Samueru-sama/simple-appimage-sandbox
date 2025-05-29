@@ -345,9 +345,9 @@ _make_bwrap_array() {
 	fi
 	if [ "$SHARE_APP_CONFIG" = 1 ]; then
 		set -- "$@" \
-		  --ro-bind-try "$DATADIR"/"$APPNAME"   "$DATADIR"/"$APPNAME"  \
-		  --ro-bind-try "$CACHEDIR"/"$APPNAME"  "$CACHEDIR"/"$APPNAME" \
-		  --ro-bind-try "$CONFIGDIR"/"$APPNAME" "$CONFIGDIR"/"$APPNAME"
+		  --bind-try "$DATADIR"/"$APPNAME"   "$DATADIR"/"$APPNAME"  \
+		  --bind-try "$CACHEDIR"/"$APPNAME"  "$CACHEDIR"/"$APPNAME" \
+		  --bind-try "$CONFIGDIR"/"$APPNAME" "$CONFIGDIR"/"$APPNAME"
 	fi
 
 	for d in $XDG_USER_DIRS $XDG_BASE_DIRS; do
@@ -456,10 +456,6 @@ while :; do
 			;;
 		--no-config)
 			SHARE_APP_CONFIG=0
-			shift
-			;;
-		--no-display)
-			SHARE_APP_DISPLAY=0
 			shift
 			;;
 		--data-dir|--sandboxed-home)
