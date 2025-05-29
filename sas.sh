@@ -37,6 +37,10 @@ SHARE_APP_XDISPLAY=1
 SHARE_APP_WDISPLAY=1
 SHARE_APP_PIPEWIRE=1
 
+# TODO add setting for devices
+SHARE_APP_DRI=1
+SHARE_APP_INPUT=1
+
 SQUASHFS_APPIMAGE=0
 DWARFS_APPIMAGE=0
 TARGET=""
@@ -495,22 +499,50 @@ while :; do
 			shift
 			shift
 			;;
+		--add-device)
+			case "$2" in
+				dri)   SHARE_APP_DRI=1               ;;
+				input) SHARE_APP_INPUT=1             ;;
+				*|'') _error "$1 Unknown device '$2'";;
+			esac
+			shift
+			shift
+			;;
+		--rm-device)
+			case "$2" in
+				dri)   SHARE_APP_DRI=0               ;;
+				input) SHARE_APP_INPUT=0             ;;
+				*|'') _error "$1 Unknown device '$2'";;
+			esac
+			shift
+			shift
+			;;
+		--add-socket)
+			case "$2" in
+				alsa |\
+				audio|\
+				pulseaudio) SHARE_APP_AUDIO=1        ;;
+				pipewire)   SHARE_APP_PIPEWIRE=1     ;;
+				dbus)       SHARE_APP_DBUS=1         ;;
+				network)    SHARE_APP_NETWORK=1      ;;
+				x11)        SHARE_APP_XDISPLAY=1     ;;
+				wayland)    SHARE_APP_WDISPLAY=1     ;;
+				*|'') _error "$1 Unknown socket '$2'";;
+			esac
+			shift
+			shift
+			;;
 		--rm-socket)
 			case "$2" in
 				alsa |\
 				audio|\
-				pulseaudio) SHARE_APP_AUDIO=0   ;;
-				pipewire)   SHARE_APP_PIPEWIRE=0;;
-				dbus)       SHARE_APP_DBUS=0    ;;
-				network)    SHARE_APP_NETWORK=0 ;;
-				x11)        SHARE_APP_XDISPLAY=0;;
-				wayland)    SHARE_APP_WDISPLAY=0;;
-				'')
-					_error "No socket given to $1"
-					;;
-				*)
-					_error "Unknown socket specified"
-					;;
+				pulseaudio) SHARE_APP_AUDIO=0        ;;
+				pipewire)   SHARE_APP_PIPEWIRE=0     ;;
+				dbus)       SHARE_APP_DBUS=0         ;;
+				network)    SHARE_APP_NETWORK=0      ;;
+				x11)        SHARE_APP_XDISPLAY=0     ;;
+				wayland)    SHARE_APP_WDISPLAY=0     ;;
+				*|'') _error "$1 Unknown socket '$2'";;
 			esac
 			shift
 			shift
@@ -527,6 +559,16 @@ while :; do
 					;;
 			esac
 			shift
+			shift
+			;;
+		--level) # aisap compat
+			if [ "$2" != 1 ]; then
+				_error "$0 only supports and defaults to $1 1"
+			fi
+			shift
+			shift
+			;;
+		--trust-once) # aisap compat
 			shift
 			;;
 		--)
