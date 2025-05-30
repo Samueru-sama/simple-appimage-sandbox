@@ -433,7 +433,7 @@ _dep_check $DEPENDENCIES
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
-	SAS_HOME="$(_get_sys_info home)"
+	SAS_HOME="$(readlink -f $(_get_sys_info home))"
 	SAS_ID="$(_get_sys_info id)"
 	# export internal variables this way apps with
 	# restricted access to /etc can still use this
@@ -448,24 +448,24 @@ if [ -z "$USER" ] || [ -z "$HOME" ] || [ -z "$ID" ]; then
 fi
 
 # get xdg vars
-BINDIR="${XDG_BIN_HOME:-~/.local/bin}"
-DATADIR="${XDG_DATA_HOME:-~/.local/share}"
-CONFIGDIR="${XDG_CONFIG_HOME:-~/.config}"
-CACHEDIR="${XDG_CACHE_HOME:-~/.cache}"
-STATEDIR="${XDG_STATE_HOME:-~/.local/state}"
+BINDIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
+DATADIR="${XDG_DATA_HOME:-$HOME/.local/share}"
+CONFIGDIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+STATEDIR="${XDG_STATE_HOME:-$HOME/.local/state}"
 RUNDIR="${XDG_RUNTIME_DIR:-/run/user/"$ID"}"
 
 # check xdg user dirs, if they are spooky we use their default value
-APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo ~/Applications)"
-DESKTOPDIR="$(     _check_userdir DESKTOP      || echo ~/Desktop)"
-DOCUMENTSDIR="$(   _check_userdir DOCUMENTS    || echo ~/Documents)"
-DOWNLOADDIR="$(    _check_userdir DOWNLOAD     || echo ~/Downloads )"
-GAMESDIR="$(       _check_userdir GAMES        || echo ~/Games)"
-MUSICDIR="$(       _check_userdir MUSIC        || echo ~/Music)"
-PICTURESDIR="$(    _check_userdir PICTURES     || echo ~/Pictures)"
-PUBLICSHAREDIR="$( _check_userdir PUBLICSHARE  || echo ~/Public)"
-TEMPLATESDIR="$(   _check_userdir TEMPLATES    || echo ~/Templates)"
-VIDEOSDIR="$(      _check_userdir VIDEOS       || echo ~/Videos)"
+APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo $HOME/Applications)"
+DESKTOPDIR="$(     _check_userdir DESKTOP      || echo $HOME/Desktop)"
+DOCUMENTSDIR="$(   _check_userdir DOCUMENTS    || echo $HOME/Documents)"
+DOWNLOADDIR="$(    _check_userdir DOWNLOAD     || echo $HOME/Downloads )"
+GAMESDIR="$(       _check_userdir GAMES        || echo $HOME/Games)"
+MUSICDIR="$(       _check_userdir MUSIC        || echo $HOME/Music)"
+PICTURESDIR="$(    _check_userdir PICTURES     || echo $HOME/Pictures)"
+PUBLICSHAREDIR="$( _check_userdir PUBLICSHARE  || echo $HOME/Public)"
+TEMPLATESDIR="$(   _check_userdir TEMPLATES    || echo $HOME/Templates)"
+VIDEOSDIR="$(      _check_userdir VIDEOS       || echo $HOME/Videos)"
 
 # check xdg base dir vars are not some odd value
 _check_xdgbase $XDG_BASE_DIRS
