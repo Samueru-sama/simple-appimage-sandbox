@@ -164,17 +164,17 @@ _is_spooky() {
 		"/proc"                 |\
 		"/mnt"                  |\
 		"/media"                |\
-		"$HOME/.local"          |\
-		"$HOME/.firefox"        |\
-		"$HOME/.gnupg"          |\
-		"$HOME/.mozilla"        |\
-		"$HOME/.ssh"            |\
-		"$HOME/.vim"            |\
-		"$HOME/.bashrc"         |\
-		"$HOME/.profile"        |\
-		"$HOME/.bash_profile"   |\
-		"$HOME/.zshrc"          |\
-		"$HOME/.zprofile"       |\
+		~/.local          |\
+		~/.firefox        |\
+		~/.gnupg          |\
+		~/.mozilla        |\
+		~/.ssh            |\
+		~/.vim            |\
+		~/.bashrc         |\
+		~/.profile        |\
+		~/.bash_profile   |\
+		~/.zshrc          |\
+		~/.zprofile       |\
 		"$ZDOTDIR"              )
 			return 1
 			;;
@@ -448,24 +448,24 @@ if [ -z "$USER" ] || [ -z "$HOME" ] || [ -z "$ID" ]; then
 fi
 
 # get xdg vars
-BINDIR="$(readlink -f "${XDG_BIN_HOME:-$HOME/.local/bin}")"
-DATADIR="$(readlink -f "${XDG_DATA_HOME:-$HOME/.local/share}")"
-CONFIGDIR="$(readlink -f "${XDG_CONFIG_HOME:-$HOME/.config}")"
-CACHEDIR="$(readlink -f "${XDG_CACHE_HOME:-$HOME/.cache}")"
-STATEDIR="$(readlink -f "${XDG_STATE_HOME:-$HOME/.local/state}")"
+BINDIR="$(readlink -f "${XDG_BIN_HOME:-~/.local/bin}")"
+DATADIR="$(readlink -f "${XDG_DATA_HOME:-~/.local/share}")"
+CONFIGDIR="$(readlink -f "${XDG_CONFIG_HOME:-~/.config}")"
+CACHEDIR="$(readlink -f "${XDG_CACHE_HOME:-~/.cache}")"
+STATEDIR="$(readlink -f "${XDG_STATE_HOME:-~/.local/state}")"
 RUNDIR="${XDG_RUNTIME_DIR:-/run/user/"$ID"}"
 
 # check xdg user dirs, if they are spooky we use their default value
-APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo $HOME/Applications)"
-DESKTOPDIR="$(     _check_userdir DESKTOP      || echo $HOME/Desktop)"
-DOCUMENTSDIR="$(   _check_userdir DOCUMENTS    || echo $HOME/Documents)"
-DOWNLOADDIR="$(    _check_userdir DOWNLOAD     || echo $HOME/Downloads )"
-GAMESDIR="$(       _check_userdir GAMES        || echo $HOME/Games)"
-MUSICDIR="$(       _check_userdir MUSIC        || echo $HOME/Music)"
-PICTURESDIR="$(    _check_userdir PICTURES     || echo $HOME/Pictures)"
-PUBLICSHAREDIR="$( _check_userdir PUBLICSHARE  || echo $HOME/Public)"
-TEMPLATESDIR="$(   _check_userdir TEMPLATES    || echo $HOME/Templates)"
-VIDEOSDIR="$(      _check_userdir VIDEOS       || echo $HOME/Videos)"
+APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo ~/Applications)"
+DESKTOPDIR="$(     _check_userdir DESKTOP      || echo ~/Desktop)"
+DOCUMENTSDIR="$(   _check_userdir DOCUMENTS    || echo ~/Documents)"
+DOWNLOADDIR="$(    _check_userdir DOWNLOAD     || echo ~/Downloads )"
+GAMESDIR="$(       _check_userdir GAMES        || echo ~/Games)"
+MUSICDIR="$(       _check_userdir MUSIC        || echo ~/Music)"
+PICTURESDIR="$(    _check_userdir PICTURES     || echo ~/Pictures)"
+PUBLICSHAREDIR="$( _check_userdir PUBLICSHARE  || echo ~/Public)"
+TEMPLATESDIR="$(   _check_userdir TEMPLATES    || echo ~/Templates)"
+VIDEOSDIR="$(      _check_userdir VIDEOS       || echo ~/Videos)"
 
 # check xdg base dir vars are not some odd value
 _check_xdgbase $XDG_BASE_DIRS
