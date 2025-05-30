@@ -175,7 +175,7 @@ _is_spooky() {
 		"$HOME/.bash_profile" |\
 		"$HOME/.zshrc"        |\
 		"$HOME/.zprofile"     |\
-		"$ZDOTDIR"      )
+		"$ZDOTDIR"            )
 			return 1
 			;;
 		*)
