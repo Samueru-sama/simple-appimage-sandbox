@@ -448,11 +448,11 @@ if [ -z "$USER" ] || [ -z "$HOME" ] || [ -z "$ID" ]; then
 fi
 
 # get xdg vars
-BINDIR="$(readlink -f ${XDG_BIN_HOME:-~/.local/bin})"
-DATADIR="$(readlink -f ${XDG_DATA_HOME:-~/.local/share})"
-CONFIGDIR="$(readlink -f ${XDG_CONFIG_HOME:-~/.config})"
-CACHEDIR="$(readlink -f ${XDG_CACHE_HOME:-~/.cache})"
-STATEDIR="$(readlink -f ${XDG_STATE_HOME:-~/.local/state})"
+BINDIR="$(readlink -f ${XDG_BIN_HOME:-$HOME/.local/bin})"
+DATADIR="$(readlink -f ${XDG_DATA_HOME:-$HOME/.local/share})"
+CONFIGDIR="$(readlink -f ${XDG_CONFIG_HOME:-$HOME/.config})"
+CACHEDIR="$(readlink -f ${XDG_CACHE_HOME:-$HOME/.cache})"
+STATEDIR="$(readlink -f ${XDG_STATE_HOME:-$HOME/.local/state})"
 RUNDIR="${XDG_RUNTIME_DIR:-/run/user/"$ID"}"
 
 # check xdg user dirs, if they are spooky we use their default value
