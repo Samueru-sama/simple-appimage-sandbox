@@ -8,7 +8,7 @@
 
 set -e
 
-VERSION=0.3
+VERSION=0.4
 
 ADD_DIR=""
 ALLOW_BINDIR=0
