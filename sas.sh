@@ -155,27 +155,27 @@ _is_target() {
 
 _is_spooky() {
 	case "$(readlink -f "$1")" in
-		""                    |\
-		"/"                   |\
-		"/home"               |\
-		"$HOME"               |\
-		"/run"                |\
-		"/dev"                |\
-		"/proc"               |\
-		"/mnt"                |\
-		"/media"              |\
-		"$HOME/.local"        |\
-		"$HOME/.firefox"      |\
-		"$HOME/.gnupg"        |\
-		"$HOME/.mozilla"      |\
-		"$HOME/.ssh"          |\
-		"$HOME/.vim"          |\
-		"$HOME/.bashrc"       |\
-		"$HOME/.profile"      |\
-		"$HOME/.bash_profile" |\
-		"$HOME/.zshrc"        |\
-		"$HOME/.zprofile"     |\
-		"$ZDOTDIR"            )
+		""                      |\
+		"/"                     |\
+		"$(readlink -f /home)"  |\
+		"$HOME"                 |\
+		"/run"                  |\
+		"/dev"                  |\
+		"/proc"                 |\
+		"/mnt"                  |\
+		"/media"                |\
+		"$HOME/.local"          |\
+		"$HOME/.firefox"        |\
+		"$HOME/.gnupg"          |\
+		"$HOME/.mozilla"        |\
+		"$HOME/.ssh"            |\
+		"$HOME/.vim"            |\
+		"$HOME/.bashrc"         |\
+		"$HOME/.profile"        |\
+		"$HOME/.bash_profile"   |\
+		"$HOME/.zshrc"          |\
+		"$HOME/.zprofile"       |\
+		"$ZDOTDIR"              )
 			return 1
 			;;
 		*)
