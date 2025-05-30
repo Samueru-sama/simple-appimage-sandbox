@@ -99,7 +99,6 @@ dwarfs
 grep
 head
 md5sum
-readelf # Is there a way to get this done without this?
 readlink
 sed
 squashfuse
