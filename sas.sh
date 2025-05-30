@@ -46,7 +46,6 @@ DWARFS_APPIMAGE=0
 TARGET=""
 MOUNT_POINT=""
 
-# TODO Find a way to do this without readelf
 DEPENDENCIES="
 	awk
 	bwrap
