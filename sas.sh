@@ -508,7 +508,7 @@ while :; do
 				# in filenames, which is very useful here
 				*)
 					ADD_DIR="$ADD_DIR
-					$(readlink -f "$2")"
+					$(readlink -f "$2" || echo "")"
 					;;
 			esac
 			shift
