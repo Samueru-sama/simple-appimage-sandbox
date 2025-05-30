@@ -164,17 +164,17 @@ _is_spooky() {
 		"/proc"                 |\
 		"/mnt"                  |\
 		"/media"                |\
-		~/.local          |\
-		~/.firefox        |\
-		~/.gnupg          |\
-		~/.mozilla        |\
-		~/.ssh            |\
-		~/.vim            |\
-		~/.bashrc         |\
-		~/.profile        |\
-		~/.bash_profile   |\
-		~/.zshrc          |\
-		~/.zprofile       |\
+		~/.local                |\
+		~/.firefox              |\
+		~/.gnupg                |\
+		~/.mozilla              |\
+		~/.ssh                  |\
+		~/.vim                  |\
+		~/.bashrc               |\
+		~/.profile              |\
+		~/.bash_profile         |\
+		~/.zshrc                |\
+		~/.zprofile             |\
 		"$ZDOTDIR"              )
 			return 1
 			;;
