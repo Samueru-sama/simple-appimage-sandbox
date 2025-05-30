@@ -176,10 +176,10 @@ _is_spooky() {
 		~/.zshrc                |\
 		~/.zprofile             |\
 		"$ZDOTDIR"              )
-			return 1
+			return 0
 			;;
 		*)
-			return 0
+			return 1
 			;;
 	esac
 }
@@ -187,7 +187,7 @@ _is_spooky() {
 _check_xdgbase() {
 	for d do
 		eval "d=\$$d"
-		if ! _is_spooky "$d"; then
+		if _is_spooky "$d"; then
 			_error "Something is fishy here, bailing out..."
 		fi
 	done
@@ -214,7 +214,7 @@ _check_userdir() {
 	dir="$(eval echo \$XDG_$1_DIR)"
 	if [ -z "$dir" ]; then
 		return 1
-	elif ! _is_spooky "$dir"; then
+	elif _is_spooky "$dir"; then
 		return 1
 	fi
 	echo "$dir"
@@ -517,7 +517,7 @@ while :; do
 		--data-dir|--sandboxed-home)
 			shift
 			FAKEHOME="$(readlink -f "$1")"
-			if ! _is_spooky "$FAKEHOME"; then
+			if _is_spooky "$FAKEHOME"; then
 				_error "Cannot use $1 as sandboxed home"
 			fi
 			shift
