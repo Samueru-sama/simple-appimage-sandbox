@@ -470,7 +470,7 @@ VIDEOSDIR="$(      _check_userdir VIDEOS       || echo $HOME/Videos)"
 # check xdg base dir vars are not some odd value
 _check_xdgbase $XDG_BASE_DIRS
 
-ZDOTDIR="${ZDOTDIR:-$HOME}"
+ZDOTDIR="$(readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
 WDISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 XDISPLAY="${XAUTHORITY:-$RUNDIR/Xauthority}"
