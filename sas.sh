@@ -8,7 +8,7 @@
 
 set -e
 
-VERSION=0.4
+VERSION=0.5
 
 ADD_DIR=""
 ALLOW_BINDIR=0
@@ -36,6 +36,7 @@ SHARE_APP_DBUS=1
 SHARE_APP_XDISPLAY=1
 SHARE_APP_WDISPLAY=1
 SHARE_APP_PIPEWIRE=1
+SHARE_APP_TMPDIR=1
 
 # TODO add setting for devices
 SHARE_APP_DRI=1
@@ -43,6 +44,7 @@ SHARE_APP_INPUT=1
 
 SQUASHFS_APPIMAGE=0
 DWARFS_APPIMAGE=0
+APP_TMPDIR=""
 TARGET=""
 MOUNT_POINT=""
 
@@ -76,7 +78,6 @@ DEFAULT_SYS_DIRS="
 	/opt
 	/sbin
 	/sys
-	/tmp
 	/usr/bin
 	/usr/lib
 	/usr/lib32
@@ -92,6 +93,9 @@ _cleanup() {
 		sleep 2
 		umount "$MOUNT_POINT"
 		rm -rf "$MOUNT_POINT"
+	fi
+	if [ -n "$APP_TMPDIR" ]; then
+		rm -rf "$APP_TMPDIR"
 	fi
 	rm -f "$CONFIGDIR"/.user-dirs.dirs.safe
 }
@@ -228,13 +232,21 @@ _make_fakehome() {
 }
 
 _is_appimage() {
-	head="$(head -c 5242880 "$1")"
-	if printf '%s' "$head" | grep -qa 'DWARFS'; then
+	if printf '%s' "$HEAD" | grep -qa 'DWARFS'; then
 		DWARFS_APPIMAGE=1
-	elif printf '%s' "$head" | grep -qa 'squashfs'; then
+	elif printf '%s' "$HEAD" | grep -qa 'squashfs'; then
 		SQUASHFS_APPIMAGE=1
 	else
 		return 1
+	fi
+}
+
+_get_hash() {
+	HEAD="$(head -c 5242880 "$1")"
+	hash1="$(echo "$HEAD" | md5sum | grep -o '^......')"
+	hash2="$(tail -c 1048576 "$1" | md5sum | grep -o '^......')"
+	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
+		_error "ERROR: Something went wrong getting hash from $1"
 	fi
 }
 
@@ -290,13 +302,7 @@ _find_offset() {
 }
 
 _make_mountpoint() {
-	hash1="$(head -c 2097152 "$1" | md5sum | grep -o '^......')"
-	hash2="$(tail -c 1048576 "$1" | md5sum | grep -o '^......')"
-	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
-		_error "ERROR: Something went wrong getting hash from $1"
-	fi
-
-	MOUNT_POINT="$TMPDIR/.$(basename "$1")-$hash1-$hash2"
+	MOUNT_POINT="$TMPDIR/.$APPNAME-$hash1-$hash2"
 	mkdir -p "$MOUNT_POINT"
 
 	if [ "$DWARFS_APPIMAGE" = 1 ]; then
@@ -334,12 +340,21 @@ _make_bwrap_array() {
 		fi
 	done
 
+
 	if [ "$SQUASHFS_APPIMAGE" = 1 ] || [ "$DWARFS_APPIMAGE" = 1 ]; then
 		set -- "$@" \
-		  --setenv APPIMAGE  "$APP_APPIMAGE" \
-		  --setenv APPDIR    "$MOUNT_POINT"  \
-		  --setenv ARGV0     "$APP_ARGV0"    \
+		  --bind-try "$MOUNT_POINT" "$MOUNT_POINT" \
+		  --setenv APPIMAGE  "$APP_APPIMAGE"       \
+		  --setenv APPDIR    "$MOUNT_POINT"        \
+		  --setenv ARGV0     "$APP_ARGV0"          \
 		  --setenv APPIMAGE_EXTRACT_AND_RUN 1
+	fi
+	if [ "$SHARE_APP_TMPDIR" = 1 ]; then
+		set -- "$@" --bind-try /tmp /tmp
+	else
+		APP_TMPDIR="$TMPDIR/.$APPNAME-tmpdir-$hash1"
+		mkdir -p "$TMPDIR/.$APPNAME-tmpdir-$hash1"
+		set -- "$@" --bind-try /tmp   "$APP_TMPDIR"
 	fi
 	if [ "$SHARE_APP_DBUS" = 1 ]; then
 		set -- "$@" \
@@ -495,6 +510,10 @@ while :; do
 			SHARE_APP_CONFIG=0
 			shift
 			;;
+		--no-tmpdir)
+			SHARE_APP_TMPDIR=0
+			shift
+			;;
 		--data-dir|--sandboxed-home)
 			shift
 			FAKEHOME="$(readlink -f "$1")"
@@ -631,6 +650,7 @@ while :; do
 			;;
 		*|'')
 			if _is_target "$1"; then
+				_get_hash "$TARGET"
 				_make_fakehome
 				# We shift and break here to later pass
 				# the rest of the array to $TO_EXEC
@@ -668,4 +688,3 @@ eval set -- "$BWRAP_ARRAY" -- "$ARRAY"
 
 # Do the thing!
 bwrap "$@"
-
