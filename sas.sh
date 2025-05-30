@@ -214,7 +214,7 @@ _check_userdir() {
 	dir="$(eval echo \$XDG_$1_DIR)"
 	if [ -z "$dir" ]; then
 		return 1
-	elif _is_spooky "$dir"; then
+	elif ! _is_spooky "$dir"; then
 		return 1
 	fi
 	echo "$dir"
