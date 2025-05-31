@@ -158,6 +158,7 @@ _is_spooky() {
 		""              |\
 		"/"             |\
 		"/home"         |\
+		"/var/home"     |\
 		"$HOME"         |\
 		"/run"          |\
 		"/dev"          |\
@@ -214,7 +215,7 @@ _check_userdir() {
 	dir="$(eval echo \$XDG_$1_DIR)"
 	if [ -z "$dir" ]; then
 		return 1
-	elif _is_spooky "$dir"; then
+	elif ! _is_spooky "$dir"; then
 		return 1
 	fi
 	echo "$dir"
@@ -433,7 +434,7 @@ _dep_check $DEPENDENCIES
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
-	SAS_HOME="$(_get_sys_info home)"
+	SAS_HOME="$(readlink -f "$(_get_sys_info home)")"
 	SAS_ID="$(_get_sys_info id)"
 	# export internal variables this way apps with
 	# restricted access to /etc can still use this
@@ -443,17 +444,17 @@ fi
 HOME="$SAS_HOME"
 ID="$SAS_ID"
 
-if [ -z "$USER" ] || [ -z "$HOME" ] || [ -z "$ID" ]; then
+if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ]; then
 	_error "This system is fucked up"
 fi
 
 # get xdg vars
-BINDIR="${XDG_BIN_HOME:-~/.local/bin}"
-DATADIR="${XDG_DATA_HOME:-~/.local/share}"
-CONFIGDIR="${XDG_CONFIG_HOME:-~/.config}"
-CACHEDIR="${XDG_CACHE_HOME:-~/.cache}"
-STATEDIR="${XDG_STATE_HOME:-~/.local/state}"
-RUNDIR="${XDG_RUNTIME_DIR:-/run/user/"$ID"}"
+BINDIR="$(readlink -f "${XDG_BIN_HOME:-$HOME/.local/bin}")"
+DATADIR="$(readlink -f "${XDG_DATA_HOME:-$HOME/.local/share}")"
+CONFIGDIR="$(readlink -f "${XDG_CONFIG_HOME:-$HOME/.config}")"
+CACHEDIR="$(readlink -f "${XDG_CACHE_HOME:-$HOME/.cache}")"
+STATEDIR="$(readlink -f "${XDG_STATE_HOME:-$HOME/.local/state}")"
+RUNDIR="$(readlink -f "${XDG_RUNTIME_DIR:-/run/user/$ID}")"
 
 # check xdg user dirs, if they are spooky we use their default value
 APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo ~/Applications)"
@@ -470,7 +471,7 @@ VIDEOSDIR="$(      _check_userdir VIDEOS       || echo ~/Videos)"
 # check xdg base dir vars are not some odd value
 _check_xdgbase $XDG_BASE_DIRS
 
-ZDOTDIR="${ZDOTDIR:-$HOME}"
+ZDOTDIR="$(readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
 WDISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 XDISPLAY="${XAUTHORITY:-$RUNDIR/Xauthority}"
