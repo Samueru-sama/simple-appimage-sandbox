@@ -181,11 +181,14 @@ _is_spooky() {
 		*.local      |\
 		*.firefox    |\
 		*.firedragon |\
+		*.librewolf  |\
+		*.mullvad*   |\
 		*.zen        |\
 		*.gnupg      |\
+		*.thunderbird|\
 		*.mozilla    |\
 		*.ssh        |\
-		*.vim        |\
+		*.vim*       |\
 		*.profile    |\
 		*.bash*      |\
 		*.zsh*       |\
