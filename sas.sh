@@ -8,6 +8,10 @@
 
 set -e
 
+if [ "$SAS_DEBUG" = 1 ]; then
+	set -x
+fi
+
 VERSION=0.6
 
 ADD_DIR=""
@@ -47,6 +51,7 @@ DWARFS_APPIMAGE=0
 APP_TMPDIR=""
 TARGET=""
 MOUNT_POINT=""
+FAKEHOME=""
 
 DEPENDENCIES="
 	awk
@@ -232,12 +237,19 @@ _check_userdir() {
 }
 
 _make_fakehome() {
-	if [ -z "$FAKEHOME" ]; then
+	if [ -d "$FAKEHOME" ]; then
+		return 0
+	elif [ -n "$1" ]; then
+		FAKEHOME="$(readlink -f "$1")"
+	else
 		FAKEHOME="$(dirname "$TARGET")/$APPNAME.home"
 	fi
 
-	mkdir -p "$FAKEHOME"
-	if [ ! -w "$FAKEHOME" ]; then
+	mkdir -p "$FAKEHOME" 2>/dev/null || true
+
+	if ! _is_spooky "$FAKEHOME"; then
+		_error "Cannot use $1 as sandboxed home"
+	elif [ ! -w "$FAKEHOME" ]; then
 		_error "Cannot make sandboxed home at $FAKEHOME"
 	fi
 }
@@ -263,43 +275,43 @@ _get_hash() {
 
 _find_offset() {
 	offset="$(LC_ALL=C od -An -vtx1 -N 64 -- "$1" | awk '
-	BEGIN {
-		  for (i = 0; i < 16; i++) {
-		  c = sprintf("%x", i)
-		  H[c] = i
-		  H[toupper(c)] = i
-		  }
+	  BEGIN {
+		for (i = 0; i < 16; i++) {
+			c = sprintf("%x", i)
+			H[c] = i
+			H[toupper(c)] = i
+		}
 	  }
 	  {
 		  elfHeader = elfHeader " " $0
 	  }
 	  END {
-		  $0 = toupper(elfHeader)
-		  if ($5 == "02") is64 = 1; else is64 = 0
-		  if ($6 == "02") isBE = 1; else isBE = 0
-		  if (is64) {
-		  if (isBE) {
-			  shoff = $41 $42 $43 $44 $45 $46 $47 $48
-			  shentsize = $59 $60
-			  shnum = $61 $62
+		$0 = toupper(elfHeader)
+		if ($5 == "02") is64 = 1; else is64 = 0
+		if ($6 == "02") isBE = 1; else isBE = 0
+		if (is64) {
+			if (isBE) {
+				shoff = $41 $42 $43 $44 $45 $46 $47 $48
+				shentsize = $59 $60
+				shnum = $61 $62
+			} else {
+				shoff = $48 $47 $46 $45 $44 $43 $42 $41
+				shentsize = $60 $59
+				shnum = $62 $61
+			}
 		  } else {
-			  shoff = $48 $47 $46 $45 $44 $43 $42 $41
-			  shentsize = $60 $59
-			  shnum = $62 $61
-		  }
-		  } else {
-		  if (isBE) {
-			  shoff = $33 $34 $35 $36
-			  shentsize = $47 $48
-			  shnum = $49 $50
-		  } else {
-			  shoff = $36 $35 $34 $33
-			  shentsize = $48 $47
-			  shnum = $50 $49
-		  }
+			if (isBE) {
+				shoff = $33 $34 $35 $36
+				shentsize = $47 $48
+				shnum = $49 $50
+			} else {
+				shoff = $36 $35 $34 $33
+				shentsize = $48 $47
+				shnum = $50 $49
+			}
 		  }
 		  print parsehex(shoff) + parsehex(shentsize) * parsehex(shnum)
-		  }
+		}
 	  function parsehex(v,    i, r) {
 		  r = 0
 		  for (i = 1; i <= length(v); i++)
@@ -544,11 +556,12 @@ while :; do
 			shift
 			;;
 		--data-dir|--sandboxed-home)
+			case "$2" in
+				''|-*) _error "No directory given to $1";;
+				*)     _make_fakehome "$2"              ;;
+
+			esac
 			shift
-			FAKEHOME="$(readlink -f "$1")"
-			if ! _is_spooky "$FAKEHOME"; then
-				_error "Cannot use $1 as sandboxed home"
-			fi
 			shift
 			;;
 		--add-file|--add-dir)
