@@ -155,31 +155,32 @@ _is_target() {
 
 _is_spooky() {
 	case "$(readlink -f "$1")" in
-		""                      |\
-		"/"                     |\
-		"$(readlink -f /home)"  |\
-		"$HOME"                 |\
-		"/run"                  |\
-		"/dev"                  |\
-		"/proc"                 |\
-		"/mnt"                  |\
-		"/media"                |\
-		~/.local                |\
-		~/.firefox              |\
-		~/.gnupg                |\
-		~/.mozilla              |\
-		~/.ssh                  |\
-		~/.vim                  |\
-		~/.bashrc               |\
-		~/.profile              |\
-		~/.bash_profile         |\
-		~/.zshrc                |\
-		~/.zprofile             |\
-		"$ZDOTDIR"              )
-			return 0
+		""              |\
+		"/"             |\
+		"/home"         |\
+		"/var/home"     |\
+		"$HOME"         |\
+		"/run"          |\
+		"/dev"          |\
+		"/proc"         |\
+		"/mnt"          |\
+		"/media"        |\
+		~/.local        |\
+		~/.firefox      |\
+		~/.gnupg        |\
+		~/.mozilla      |\
+		~/.ssh          |\
+		~/.vim          |\
+		~/.bashrc       |\
+		~/.profile      |\
+		~/.bash_profile |\
+		~/.zshrc        |\
+		~/.zprofile     |\
+		"$ZDOTDIR"      )
+			return 1
 			;;
 		*)
-			return 1
+			return 0
 			;;
 	esac
 }
@@ -187,7 +188,7 @@ _is_spooky() {
 _check_xdgbase() {
 	for d do
 		eval "d=\$$d"
-		if _is_spooky "$d"; then
+		if ! _is_spooky "$d"; then
 			_error "Something is fishy here, bailing out..."
 		fi
 	done
@@ -214,7 +215,7 @@ _check_userdir() {
 	dir="$(eval echo \$XDG_$1_DIR)"
 	if [ -z "$dir" ]; then
 		return 1
-	elif _is_spooky "$dir"; then
+	elif ! _is_spooky "$dir"; then
 		return 1
 	fi
 	echo "$dir"
@@ -433,7 +434,7 @@ _dep_check $DEPENDENCIES
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
-	SAS_HOME="$(readlink -f $(_get_sys_info home))"
+	SAS_HOME="$(readlink -f "$(_get_sys_info home)")"
 	SAS_ID="$(_get_sys_info id)"
 	# export internal variables this way apps with
 	# restricted access to /etc can still use this
@@ -443,7 +444,7 @@ fi
 HOME="$SAS_HOME"
 ID="$SAS_ID"
 
-if [ -z "$USER" ] || [ -z "$HOME" ] || [ -z "$ID" ]; then
+if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ]; then
 	_error "This system is fucked up"
 fi
 
@@ -453,7 +454,7 @@ DATADIR="$(readlink -f "${XDG_DATA_HOME:-$HOME/.local/share}")"
 CONFIGDIR="$(readlink -f "${XDG_CONFIG_HOME:-$HOME/.config}")"
 CACHEDIR="$(readlink -f "${XDG_CACHE_HOME:-$HOME/.cache}")"
 STATEDIR="$(readlink -f "${XDG_STATE_HOME:-$HOME/.local/state}")"
-RUNDIR="${XDG_RUNTIME_DIR:-/run/user/"$ID"}"
+RUNDIR="$(readlink -f "${XDG_RUNTIME_DIR:-/run/user/$ID}")"
 
 # check xdg user dirs, if they are spooky we use their default value
 APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo ~/Applications)"
@@ -517,7 +518,7 @@ while :; do
 		--data-dir|--sandboxed-home)
 			shift
 			FAKEHOME="$(readlink -f "$1")"
-			if _is_spooky "$FAKEHOME"; then
+			if ! _is_spooky "$FAKEHOME"; then
 				_error "Cannot use $1 as sandboxed home"
 			fi
 			shift
