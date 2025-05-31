@@ -38,9 +38,9 @@ SHARE_APP_WDISPLAY=1
 SHARE_APP_PIPEWIRE=1
 SHARE_APP_TMPDIR=1
 
-# TODO add setting for devices
-SHARE_APP_DRI=1
-SHARE_APP_INPUT=1
+SHARE_DEV_DRI=1
+SHARE_DEV_INPUT=1
+SHARE_DEV_ALL=1
 
 SQUASHFS_APPIMAGE=0
 DWARFS_APPIMAGE=0
@@ -55,6 +55,7 @@ DEPENDENCIES="
 	grep
 	head
 	md5sum
+	od
 	readlink
 	sed
 	squashfuse
@@ -77,7 +78,6 @@ DEFAULT_SYS_DIRS="
 	/lib64
 	/opt
 	/sbin
-	/sys
 	/usr/bin
 	/usr/lib
 	/usr/lib32
@@ -224,7 +224,7 @@ _check_userdir() {
 
 	. "$CONFIGDIR"/.user-dirs.dirs.safe
 
-	dir="$(eval echo \$XDG_$1_DIR)"
+	dir="$(eval echo "\$XDG_$1_DIR")"
 	if [ -z "$dir" ]; then
 		return 1
 	fi
@@ -339,7 +339,6 @@ _make_bwrap_array() {
 	  --unshare-cgroup-try        \
 	  --new-session               \
 	  --unshare-ipc               \
-	  --dev-bind-try /dev /dev    \
 	  --setenv  TMPDIR    /tmp    \
 	  --setenv  HOME      "$HOME" \
 	  --ro-bind "$TARGET"   /app/"$APPNAME" \
@@ -351,6 +350,24 @@ _make_bwrap_array() {
 		fi
 	done
 
+	if [ "$SHARE_DEV_ALL" = 1 ]; then
+		SHARE_DEV_DRI=1
+		SHARE_DEV_INPUT=1
+		set -- "$@" --dev-bind-try /dev  /dev
+	fi
+	if [ "$SHARE_DEV_DRI" = 1 ]; then
+		set -- "$@" \
+		  --ro-bind-try  /usr/share/glvnd        /usr/share/glvnd     \
+		  --ro-bind-try  /usr/share/vulkan       /usr/share/vulkan    \
+		  --dev-bind-try /dev/nvidiactl          /dev/nvidiactl       \
+		  --dev-bind-try /dev/nvidia0            /dev/nvidia0         \
+		  --dev-bind-try /dev/nvidia-modeset     /dev/nvidia-modeset  \
+		  --ro-bind-try  /sys/dev/char           /sys/dev/char        \
+		  --ro-bind-try  /sys/devices/pci0000:00 /sys/devices/pci0000:00
+	fi
+	if [ "$SHARE_DEV_INPUT" = 1 ]; then
+		set -- "$@" --ro-bind  /sys/class/input  /sys/class/input
+	fi
 
 	if [ "$SQUASHFS_APPIMAGE" = 1 ] || [ "$DWARFS_APPIMAGE" = 1 ]; then
 		set -- "$@" \
@@ -481,6 +498,7 @@ VIDEOSDIR="$(      _check_userdir VIDEOS       || echo ~/Videos)"
 # check xdg base dir vars are not some odd value
 _check_xdgbase $XDG_BASE_DIRS $XDG_APPLICATION_DIRS
 
+
 ZDOTDIR="$(readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
 WDISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
@@ -583,8 +601,9 @@ while :; do
 			;;
 		--add-device)
 			case "$2" in
-				dri)   SHARE_APP_DRI=1               ;;
-				input) SHARE_APP_INPUT=1             ;;
+				all)   SHARE_DEV_ALL=1               ;;
+				dri)   SHARE_DEV_DRI=1               ;;
+				input) SHARE_DEV_INPUT=1             ;;
 				*|'') _error "$1 Unknown device '$2'";;
 			esac
 			shift
@@ -592,8 +611,9 @@ while :; do
 			;;
 		--rm-device)
 			case "$2" in
-				dri)   SHARE_APP_DRI=0               ;;
-				input) SHARE_APP_INPUT=0             ;;
+				all)   SHARE_DEV_ALL=0               ;;
+				dri)   SHARE_DEV_DRI=0               ;;
+				input) SHARE_DEV_INPUT=0             ;;
 				*|'') _error "$1 Unknown device '$2'";;
 			esac
 			shift
@@ -633,6 +653,9 @@ while :; do
 			case "$2" in
 				''|-*)
 					_error "No file/directory given to $1"
+					;;
+				/tmp)
+					SHARE_APP_TMPDIR=0
 					;;
 				*)
 					DEFAULT_SYS_DIRS="$(echo \
