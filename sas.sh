@@ -154,29 +154,36 @@ _is_target() {
 }
 
 _is_spooky() {
-	case "$(readlink -f "$1")" in
-		""              |\
-		"/"             |\
-		"/home"         |\
-		"/var/home"     |\
-		"$HOME"         |\
-		"/run"          |\
-		"/dev"          |\
-		"/proc"         |\
-		"/mnt"          |\
-		"/media"        |\
-		~/.local        |\
-		~/.firefox      |\
-		~/.gnupg        |\
-		~/.mozilla      |\
-		~/.ssh          |\
-		~/.vim          |\
-		~/.bashrc       |\
-		~/.profile      |\
-		~/.bash_profile |\
-		~/.zshrc        |\
-		~/.zprofile     |\
-		"$ZDOTDIR"      )
+	to_check="$1"
+	if [ -L "$to_check" ]; then
+		to_check="$(readlink -f "$to_check")"
+	fi
+
+	case "$to_check" in
+		""           |\
+		"/"          |\
+		*//*         |\
+		"/home"      |\
+		"/var/home"  |\
+		"$HOME"      |\
+		"/run"       |\
+		"/dev"       |\
+		"/proc"      |\
+		"/mnt"       |\
+		"/media"     |\
+		*.local      |\
+		*.firefox    |\
+		*.firedragon |\
+		*.zen        |\
+		*.gnupg      |\
+		*.mozilla    |\
+		*.ssh        |\
+		*.vim        |\
+		*.profile    |\
+		*.bash*      |\
+		*.zsh*       |\
+		*fish        |\
+		"$ZDOTDIR"   )
 			return 1
 			;;
 		*)
