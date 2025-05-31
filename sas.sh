@@ -54,7 +54,7 @@ DEPENDENCIES="
 	dwarfs
 	grep
 	head
-	md5sum
+	cksum
 	od
 	readlink
 	sed
@@ -253,9 +253,9 @@ _is_appimage() {
 }
 
 _get_hash() {
-	HEAD="$(head -c 5242880 "$1")"
-	hash1="$(echo "$HEAD" | md5sum | grep -o '^......')"
-	hash2="$(tail -c 1048576 "$1" | md5sum | grep -o '^......')"
+	HEAD="$(head -c 3145728 "$1")"
+	hash1="$(echo "$HEAD" | cksum | awk '{print $1; exit}')"
+	hash2="$(tail -c 1048576 "$1" | cksum | awk '{print $1; exit}')"
 	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
 		_error "ERROR: Something went wrong getting hash from $1"
 	fi
@@ -651,12 +651,8 @@ while :; do
 			;;
 		--rm-file|--rm-dir)
 			case "$2" in
-				''|-*)
-					_error "No file/directory given to $1"
-					;;
-				/tmp)
-					SHARE_APP_TMPDIR=0
-					;;
+				''|-*) _error "No file/directory given to $1";;
+				/tmp)  SHARE_APP_TMPDIR=0                    ;;
 				*)
 					DEFAULT_SYS_DIRS="$(echo \
 					  "$DEFAULT_SYS_DIRS" | grep -Fvw "$2"
