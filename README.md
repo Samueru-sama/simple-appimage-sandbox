@@ -95,10 +95,11 @@ Dependencies:
 ```
 awk
 bwrap
+cksum
 dwarfs
 grep
 head
-md5sum
+od
 readlink
 sed
 squashfuse
