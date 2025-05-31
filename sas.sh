@@ -8,7 +8,7 @@
 
 set -e
 
-VERSION=0.5
+VERSION=0.6
 
 ADD_DIR=""
 ALLOW_BINDIR=0
@@ -163,6 +163,8 @@ _is_spooky() {
 		""           |\
 		"/"          |\
 		*//*         |\
+		*./*         |\
+		*..*         |\
 		"/home"      |\
 		"/var/home"  |\
 		"$HOME"      |\
@@ -186,8 +188,11 @@ _is_spooky() {
 		"$ZDOTDIR"   )
 			return 1
 			;;
-		*)
+		/*)  # make sure valid paths start with /
 			return 0
+			;;
+		*)
+			return 1
 			;;
 	esac
 }
@@ -221,8 +226,6 @@ _check_userdir() {
 
 	dir="$(eval echo \$XDG_$1_DIR)"
 	if [ -z "$dir" ]; then
-		return 1
-	elif ! _is_spooky "$dir"; then
 		return 1
 	fi
 	echo "$dir"
@@ -456,12 +459,12 @@ if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ]; then
 fi
 
 # get xdg vars
-BINDIR="$(readlink -f "${XDG_BIN_HOME:-$HOME/.local/bin}")"
-DATADIR="$(readlink -f "${XDG_DATA_HOME:-$HOME/.local/share}")"
-CONFIGDIR="$(readlink -f "${XDG_CONFIG_HOME:-$HOME/.config}")"
-CACHEDIR="$(readlink -f "${XDG_CACHE_HOME:-$HOME/.cache}")"
-STATEDIR="$(readlink -f "${XDG_STATE_HOME:-$HOME/.local/state}")"
-RUNDIR="$(readlink -f "${XDG_RUNTIME_DIR:-/run/user/$ID}")"
+BINDIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
+DATADIR="${XDG_DATA_HOME:-$HOME/.local/share}"
+CONFIGDIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}"
+STATEDIR="${XDG_STATE_HOME:-$HOME/.local/state}"
+RUNDIR="${XDG_RUNTIME_DIR:-/run/user/$ID}"
 
 # check xdg user dirs, if they are spooky we use their default value
 APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo ~/Applications)"
@@ -476,7 +479,7 @@ TEMPLATESDIR="$(   _check_userdir TEMPLATES    || echo ~/Templates)"
 VIDEOSDIR="$(      _check_userdir VIDEOS       || echo ~/Videos)"
 
 # check xdg base dir vars are not some odd value
-_check_xdgbase $XDG_BASE_DIRS
+_check_xdgbase $XDG_BASE_DIRS $XDG_APPLICATION_DIRS
 
 ZDOTDIR="$(readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
