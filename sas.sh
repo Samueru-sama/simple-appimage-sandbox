@@ -226,6 +226,14 @@ _is_spooky() {
 	esac
 }
 
+_is_appimage() {
+	case "$HEAD" in
+		*DWARFS*)   DWARFS_APPIMAGE=1  ;;
+		*squashfs*) SQUASHFS_APPIMAGE=1;;
+		*|'')       return 1           ;;
+	esac
+}
+
 _check_xdgbase() {
 	for d do
 		eval "d=\$$d"
@@ -274,14 +282,6 @@ _make_fakehome() {
 	elif [ ! -w "$FAKEHOME" ]; then
 		_error "Cannot make sandboxed home at $FAKEHOME"
 	fi
-}
-
-_is_appimage() {
-	case "$HEAD" in
-		*DWARFS*)   DWARFS_APPIMAGE=1  ;;
-		*squashfs*) SQUASHFS_APPIMAGE=1;;
-		*|'')       return 1           ;;
-	esac
 }
 
 _get_hash() {
@@ -530,7 +530,6 @@ VIDEOSDIR="$(      _check_userdir VIDEOS       || echo ~/Videos)"
 # check xdg base dir vars are not some odd value
 _check_xdgbase $XDG_BASE_DIRS $XDG_APPLICATION_DIRS
 
-
 ZDOTDIR="$(readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
 WDISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
@@ -579,7 +578,6 @@ while :; do
 			case "$2" in
 				''|-*) _error "No directory given to $1";;
 				*)     _make_fakehome "$2"              ;;
-
 			esac
 			shift
 			shift
