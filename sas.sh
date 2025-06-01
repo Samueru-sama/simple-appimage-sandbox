@@ -438,7 +438,7 @@ _make_bwrap_array() {
 	fi
 	if [ "$SHARE_APP_WDISPLAY" = 1 ]; then
 		set -- "$@" \
-		  --setenv WAYLAND_DISPLAY  "$WDISPLAY" \
+		  --setenv WAYLAND_DISPLAY wayland-0 \
 		  --ro-bind-try "$RUNDIR"/"$WDISPLAY" /run/user/"$ID"/wayland-0
 	fi
 	if [ "$SHARE_APP_NETWORK" = 1 ]; then
