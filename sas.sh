@@ -102,7 +102,6 @@ _cleanup() {
 	if [ -n "$APP_TMPDIR" ]; then
 		rm -rf "$APP_TMPDIR"
 	fi
-	rm -f "$CONFIGDIR"/.user-dirs.dirs.safe
 }
 
 trap _cleanup INT TERM EXIT
@@ -132,6 +131,29 @@ _get_sys_info() {
 	esac
 	awk -F':' -v U="$USER" -v F="$i" '$1==U {print $F; exit}' /etc/passwd
 }
+
+# use shell builtins for dirname and basename, saves a wooping 500us lol
+# from https://github.com/dylanaraps/pure-sh-bible
+dirname() {
+	[ -n "$1" ] || return 1
+	dir="$1"
+	dir=${dir%%"${dir##*[!/]}"}
+	if [ "${dir##*/*}" ]; then
+		dir=.
+	fi
+	dir=${dir%/*}
+	dir=${dir%%"${dir##*[!/]}"}
+	printf '%s\n' "${dir:-/}"
+}
+
+basename() {
+	[ -n "$1" ] || return 1
+	dir=${1%${1##*[!/]}}
+	dir=${dir##*/}
+	dir=${dir%"$2"}
+	printf '%s\n' "${dir:-/}"
+}
+
 
 # POSIX shell doesn't support arrays we use awk to save it into a variable
 # then with 'eval set -- $var' we add it to the positional array
@@ -214,29 +236,27 @@ _check_xdgbase() {
 	done
 }
 
+# safe and much much faster method to get user dirs using shell builtins
+# https://github.com/dylanaraps/pure-sh-bible?tab=readme-ov-file#files
 _check_userdir() {
-	if [ ! -f "$CONFIGDIR"/user-dirs.dirs ]; then
-		return 1
-	elif [ ! -f "$CONFIGDIR"/.user-dirs.dirs.safe ]; then
-		# we need to sanatize what is going to be sourced
-		safedirs="$(LC_ALL=C \
-			sed -e '/$(/d' \
-			-e '/`/d' \
-			-e '/^[[:space:]]/d' \
-			-e '/#/d' -e '/;/d' \
-			"$CONFIGDIR"/user-dirs.dirs \
-			| grep -o '^.*=.*'
-		)"
-		echo "$safedirs" > "$CONFIGDIR"/.user-dirs.dirs.safe
+	if [ -f "$CONFIGDIR"/user-dirs.dirs ]; then
+		while IFS='=' read -r key val; do
+			# Skip commented lines
+			[ "${key##\#*}" ] || continue
+			if [ XDG_"$1"_DIR = "$key" ]; then
+				# check weird stuff before running eval
+				case "$val" in
+					*['('')''`'';']*) continue  ;;
+					*) dir="$(eval echo "$val")";;
+				esac
+				if [ -n "$dir" ]; then
+					printf '%s\n' "$dir"
+					return 0
+				fi
+			fi
+		done < "$CONFIGDIR"/user-dirs.dirs
 	fi
-
-	. "$CONFIGDIR"/.user-dirs.dirs.safe
-
-	dir="$(eval echo "\$XDG_$1_DIR")"
-	if [ -z "$dir" ]; then
-		return 1
-	fi
-	echo "$dir"
+	return 1
 }
 
 _make_fakehome() {
