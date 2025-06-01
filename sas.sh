@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=0.6
+VERSION=0.7
 
 ADD_DIR=""
 ALLOW_BINDIR=0
@@ -154,7 +154,6 @@ basename() {
 	printf '%s\n' "${dir:-/}"
 }
 
-
 # POSIX shell doesn't support arrays we use awk to save it into a variable
 # then with 'eval set -- $var' we add it to the positional array
 # see https://unix.stackexchange.com/questions/421158/how-to-use-pseudo-arrays-in-posix-shell-script
@@ -278,13 +277,11 @@ _make_fakehome() {
 }
 
 _is_appimage() {
-	if printf '%s' "$HEAD" | grep -qa 'DWARFS'; then
-		DWARFS_APPIMAGE=1
-	elif printf '%s' "$HEAD" | grep -qa 'squashfs'; then
-		SQUASHFS_APPIMAGE=1
-	else
-		return 1
-	fi
+	case "$HEAD" in
+		*DWARFS*)   DWARFS_APPIMAGE=1  ;;
+		*squashfs*) SQUASHFS_APPIMAGE=1;;
+		*|'')       return 1           ;;
+	esac
 }
 
 _get_hash() {
@@ -452,7 +449,7 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_THEME" = 1 ]; then
 		while read -r d; do
 			if [ -e "$d" ]; then
-				set -- "$@" --bind-try "$d" "$d"
+				set -- "$@" --ro-bind-try "$d" "$d"
 			fi
 		done <<-EOF
 		$THEME_DIRS
@@ -476,11 +473,11 @@ _make_bwrap_array() {
 	done
 
 	while read -r d; do
-		if printf "$d" | grep -q ':rw'; then
-			set -- "$@" --bind-try    "${d%%:*}" "${d%%:*}"
-		elif [ -n "${d%%:*}" ]; then
-			set -- "$@" --ro-bind-try "${d%%:*}" "${d%%:*}"
-		fi
+		case "$d" in
+			""|:*);; # do nothing
+			*:rw) set -- "$@" --bind-try    "${d%%:*}" "${d%%:*}";;
+			*)    set -- "$@" --ro-bind-try "${d%%:*}" "${d%%:*}";;
+		esac
 	done <<-EOF
 	$ADD_DIR
 	EOF
