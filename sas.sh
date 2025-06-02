@@ -46,6 +46,8 @@ SHARE_DEV_DRI=1
 SHARE_DEV_INPUT=1
 SHARE_DEV_ALL=1
 
+SAS_PRELOAD="${SAS_PRELOAD:-0}"
+
 SQUASHFS_APPIMAGE=0
 DWARFS_APPIMAGE=0
 APP_TMPDIR=""
@@ -94,7 +96,7 @@ DEFAULT_SYS_DIRS="
 
 _cleanup() {
 	set +u
-	if [ -n "$MOUNT_POINT" ]; then
+	if [ "$SAS_PRELOAD" != 1 ] && [ -n "$MOUNT_POINT" ]; then
 		sleep 2
 		umount "$MOUNT_POINT"
 		rm -rf "$MOUNT_POINT"
@@ -362,12 +364,16 @@ _find_offset() {
 
 _make_mountpoint() {
 	MOUNT_POINT="$TMPDIR/.$APPNAME-$hash1-$hash2"
-	mkdir -p "$MOUNT_POINT"
+	if [ -f "$MOUNT_POINT"/AppRun ] || [ -f "$MOUNT_POINT"/Run ]; then
+		return 0 # it is mounted already
+	else
+		mkdir -p "$MOUNT_POINT"
+	fi
 
 	if [ "$DWARFS_APPIMAGE" = 1 ]; then
-		dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT" || true
+		dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT"
 	elif [ "$SQUASHFS_APPIMAGE" = 1 ]; then
-		squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT" || true
+		squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT"
 	fi
 }
 
@@ -590,6 +596,10 @@ while :; do
 			;;
 		--no-tmpdir)
 			SHARE_APP_TMPDIR=0
+			shift
+			;;
+		--keep-mount|--preload)
+			SAS_PRELOAD=1
 			shift
 			;;
 		--data-dir|--sandboxed-home)
