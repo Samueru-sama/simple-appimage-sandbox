@@ -227,7 +227,7 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	case "$HEAD" in
+	case "$(head -c 3145728 "$1")" in
 		*DWARFS*)   DWARFS_APPIMAGE=1  ;;
 		*squashfs*) SQUASHFS_APPIMAGE=1;;
 		*|'')       return 1           ;;
@@ -285,11 +285,10 @@ _make_fakehome() {
 }
 
 _get_hash() {
-	HEAD="$(head -c 3145728 "$1")"
-	hash1="$(echo "$HEAD" | cksum | awk '{print $1; exit}')"
+	hash1="$(head -c 1048576 "$1" | cksum | awk '{print $1; exit}')"
 	hash2="$(tail -c 1048576 "$1" | cksum | awk '{print $1; exit}')"
 	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
-		_error "ERROR: Something went wrong getting hash from $1"
+		_error "Something went wrong getting hash from $1"
 	fi
 }
 
