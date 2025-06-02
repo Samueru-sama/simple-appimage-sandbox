@@ -516,6 +516,12 @@ _make_bwrap_array() {
 # check dependencies
 _dep_check $DEPENDENCIES
 
+# Warn about slow shell
+sys_shell="$(readlink -f '/bin/sh' 2>/dev/null)"
+if [ "${sys_shell##*/}" = "bash" ]; then
+	>&2 echo "   ⚠️  WARNING: Detected bash as /bin/sh which is too slow"
+fi
+
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
