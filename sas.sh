@@ -245,25 +245,32 @@ _check_xdgbase() {
 
 # safe and much much faster method to get user dirs using shell builtins
 # https://github.com/dylanaraps/pure-sh-bible?tab=readme-ov-file#files
-_check_userdir() {
-	if [ -f "$CONFIGDIR"/user-dirs.dirs ]; then
-		while IFS='=' read -r key val; do
-			# Skip commented lines
-			[ "${key##\#*}" ] || continue
-			if [ XDG_"$1"_DIR = "$key" ]; then
-				# check weird stuff before running eval
-				case "$val" in
-					*['('')''`'';']*) continue  ;;
-					*) dir="$(eval echo "$val")";;
-				esac
-				if [ -n "$dir" ]; then
-					printf '%s\n' "$dir"
-					return 0
-				fi
-			fi
-		done < "$CONFIGDIR"/user-dirs.dirs
+_check_userdirs() {
+	if [ ! -f "$CONFIGDIR/user-dirs.dirs" ]; then
+		return 1
 	fi
-	return 1
+	while IFS='=' read -r key val; do
+		# Skip commented lines
+		[ "${key##\#*}" ] || continue
+		# check weird stuff before running eval
+		case "$val" in
+			''|*['('')''`'';']*) continue;;
+			*) dir="$(eval echo "$val")" ;;
+		esac
+		# declare each variable to each XDG dir
+		case "$key" in
+			XDG_APPLICATIONS_DIR) XDG_APPLICATIONS_DIR="$dir";;
+			XDG_DESKTOP_DIR)      XDG_DESKTOP_DIR="$dir"     ;;
+			XDG_DOCUMENTS_DIR)    XDG_DOCUMENTS_DIR="$dir"   ;;
+			XDG_DOWNLOAD_DIR)     XDG_DOWNLOAD_DIR="$dir"    ;;
+			XDG_GAMES_DIR)        XDG_GAMES_DIR="$dir"       ;;
+			XDG_MUSIC_DIR)        XDG_MUSIC_DIR="$dir"       ;;
+			XDG_PICTURES_DIR)     XDG_PICTURES_DIR="$dir"    ;;
+			XDG_PUBLICSHARE_DIR)  XDG_PUBLICSHARE_DIR="$dir" ;;
+			XDG_TEMPLATES_DIR)    XDG_TEMPLATES_DIR="$dir"   ;;
+			XDG_VIDEOS_DIR)       XDG_VIDEOS_DIR="$dir"      ;;
+		esac
+	done < "$CONFIGDIR/user-dirs.dirs"
 }
 
 _make_fakehome() {
@@ -433,7 +440,7 @@ _make_bwrap_array() {
 		set -- "$@" \
 		  --setenv XAUTHORITY "$HOME"/.Xauthority     \
 		  --ro-bind-try /tmp/.X11-unix /tmp/.X11-unix \
-		  --ro-bind-try "$XAUTHORITY" "$HOME"/.Xauthority
+		  --ro-bind-try "$XDISPLAY" "$HOME"/.Xauthority
 	fi
 	if [ "$SHARE_APP_WDISPLAY" = 1 ]; then
 		set -- "$@" \
@@ -514,20 +521,22 @@ CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 STATEDIR="${XDG_STATE_HOME:-$HOME/.local/state}"
 RUNDIR="${XDG_RUNTIME_DIR:-/run/user/$ID}"
 
-# check xdg user dirs, if they are spooky we use their default value
-APPLICATIONSDIR="$(_check_userdir APPLICATIONS || echo ~/Applications)"
-DESKTOPDIR="$(     _check_userdir DESKTOP      || echo ~/Desktop)"
-DOCUMENTSDIR="$(   _check_userdir DOCUMENTS    || echo ~/Documents)"
-DOWNLOADDIR="$(    _check_userdir DOWNLOAD     || echo ~/Downloads)"
-GAMESDIR="$(       _check_userdir GAMES        || echo ~/Games)"
-MUSICDIR="$(       _check_userdir MUSIC        || echo ~/Music)"
-PICTURESDIR="$(    _check_userdir PICTURES     || echo ~/Pictures)"
-PUBLICSHAREDIR="$( _check_userdir PUBLICSHARE  || echo ~/Public)"
-TEMPLATESDIR="$(   _check_userdir TEMPLATES    || echo ~/Templates)"
-VIDEOSDIR="$(      _check_userdir VIDEOS       || echo ~/Videos)"
+# check xdg user dirs
+_check_userdirs || true
 
-# check xdg base dir vars are not some odd value
-_check_xdgbase $XDG_BASE_DIRS $XDG_APPLICATION_DIRS
+APPLICATIONSDIR="${XDG_APPLICATIONS_DIR:-$HOME/Applications}"
+DESKTOPDIR="${XDG_DESKTOP_DIR:-$HOME/Desktop}"
+DOCUMENTSDIR="${XDG_DOCUMENTS_DIR:-$HOME/Documents}"
+DOWNLOADDIR="${XDG_DOWNLOAD_DIR:-$HOME/Downloads}"
+GAMESDIR="${XDG_GAMES_DIR:-$HOME/Games}"
+MUSICDIR="${XDG_MUSIC_DIR:-$HOME/Music}"
+PICTURESDIR="${XDG_PICTURES_DIR:-$HOME/Pictures}"
+PUBLICSHAREDIR="${XDG_PUBLICSHARE_DIR:-$HOME/Public}"
+TEMPLATESDIR="${XDG_TEMPLATES_DIR:-$HOME/Templates}"
+VIDEOSDIR="${XDG_VIDEOS_DIR:-$HOME/Videos}"
+
+# check if any of the xdg vars are set some spooky value
+_check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS
 
 ZDOTDIR="$(readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
