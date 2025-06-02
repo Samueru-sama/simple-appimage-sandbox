@@ -154,6 +154,16 @@ basename() {
 	printf '%s\n' "${dir:-/}"
 }
 
+# try to use shell builtins to resolve symlinks
+# else fallback to readlink, this saves +4ms
+_readlink() {
+	if [ "$1" = '-f' ] && cd "$2" 2>/dev/null; then
+		echo "$PWD"
+	else
+		command readlink "$@"
+	fi
+}
+
 # POSIX shell doesn't support arrays we use awk to save it into a variable
 # then with 'eval set -- $var' we add it to the positional array
 # see https://unix.stackexchange.com/questions/421158/how-to-use-pseudo-arrays-in-posix-shell-script
@@ -182,7 +192,7 @@ _is_target() {
 _is_spooky() {
 	to_check="$1"
 	if [ -L "$to_check" ]; then
-		to_check="$(readlink -f "$to_check")"
+		to_check="$(_readlink -f "$to_check")"
 	fi
 
 	case "$to_check" in
@@ -277,7 +287,7 @@ _make_fakehome() {
 	if [ -d "$FAKEHOME" ]; then
 		return 0
 	elif [ -n "$1" ]; then
-		FAKEHOME="$(readlink -f "$1")"
+		FAKEHOME="$(_readlink -f "$1")"
 	else
 		FAKEHOME="$(dirname "$TARGET")/$APPNAME.home"
 	fi
@@ -538,7 +548,7 @@ VIDEOSDIR="${XDG_VIDEOS_DIR:-$HOME/Videos}"
 # check if any of the xdg vars are set some spooky value
 _check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS
 
-ZDOTDIR="$(readlink -f "${ZDOTDIR:-$HOME}")"
+ZDOTDIR="$(_readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
 WDISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 XDISPLAY="${XAUTHORITY:-$RUNDIR/Xauthority}"
@@ -632,7 +642,7 @@ while :; do
 				# in filenames, which is very useful here
 				*)
 					ADD_DIR="$ADD_DIR
-					$(readlink -f "$2" || echo "")"
+					$(_readlink -f "$2" || echo "")"
 					;;
 			esac
 			shift
