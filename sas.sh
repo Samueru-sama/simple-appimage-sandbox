@@ -239,11 +239,15 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	case "$(head -c 3145728 "$1")" in
-		*DWARFS*)   DWARFS_APPIMAGE=1  ;;
-		*squashfs*) SQUASHFS_APPIMAGE=1;;
-		*|'')       return 1           ;;
-	esac
+	if _find_offset "$1"; then
+		case "$(head -c "$offset" "$1")" in
+			*DWARFS*)   DWARFS_APPIMAGE=1  ;;
+			*squashfs*) SQUASHFS_APPIMAGE=1;;
+			*|'')       return 1           ;;
+		esac
+	else
+		return 1
+	fi
 }
 
 _check_xdgbase() {
@@ -358,7 +362,7 @@ _find_offset() {
 	  }'
 	)"
 	if [ -z "$offset" ]; then
-		_error "Not able to find offset of $1"
+		return 1
 	fi
 }
 
@@ -754,7 +758,6 @@ done
 
 # Check if the app is an appimage, if so find offset and mount
 if _is_appimage "$TARGET"; then
-	_find_offset     "$TARGET"
 	_make_mountpoint "$TARGET"
 	if [ -f "$MOUNT_POINT"/AppRun ]; then
 		TO_EXEC="$MOUNT_POINT"/AppRun
