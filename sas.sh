@@ -493,7 +493,7 @@ _dep_check $DEPENDENCIES
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
-	SAS_HOME="$(readlink -f "$(_get_sys_info home)")"
+	SAS_HOME="$(_get_sys_info home)"
 	SAS_ID="$(_get_sys_info id)"
 	# export internal variables this way apps with
 	# restricted access to /etc can still use this
