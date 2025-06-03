@@ -1,8 +1,0 @@
-#!/bin/sh
-CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
-PATH="$CURRENTDIR/bin:$PATH"
-
-# change workign dir since we have a relative sh shebang
-cd "$CURRENTDIR" || exit 1
-exec ./sas "$@"
-
