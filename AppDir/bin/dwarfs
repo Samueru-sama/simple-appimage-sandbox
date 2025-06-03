@@ -1,4 +1,4 @@
-#!./bin/sh
+#!/bin/sh
 
 # wrapper script to reuse the dwarfs in the uruntime to mount dwarfs images
 if [ -z "$APPIMAGE" ]; then
