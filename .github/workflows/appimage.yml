@@ -50,7 +50,6 @@ jobs:
         ln -s ../busybox ./bin/head
         ln -s ../busybox ./bin/od
         ln -s ../busybox ./bin/readlink
-        ln -s ../busybox ./bin/sed
         ln -s ../busybox ./bin/tail
 
         chmod +x ./AppRun ./busybox ./bin/*
