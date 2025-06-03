@@ -4,6 +4,7 @@
 if [ -z "$APPIMAGE" ]; then
 	>&2 echo 'ERROR: $APPIMAGE var is not set'
 	>&2 echo 'Do not run this AppImage extracted manually'
+	exit 1
 fi
 
 exec "$APPIMAGE" --appimage-dwarfs "$@"
