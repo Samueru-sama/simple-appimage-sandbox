@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Simple AppImage Sandbox
+Icon=sas
+Exec=sas
+Categories=Utility;
+Hidden=true
