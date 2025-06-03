@@ -240,7 +240,9 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	if _find_offset "$1"; then
+	if [ "$SAS_SANDBOX" = 1 ]; then
+		return 1
+	elif _find_offset "$1"; then
 		case "$(head -c "$offset" "$1")" in
 			*DWARFS*)   DWARFS_APPIMAGE=1  ;;
 			*squashfs*) SQUASHFS_APPIMAGE=1;;
@@ -788,6 +790,10 @@ _make_bwrap_array
 
 # Now merge the arrays
 eval set -- "$BWRAP_ARRAY" -- "$ARRAY"
+
+# set this var so that future instances of sas don't try to use fuse
+SAS_SANDBOX=1
+export SAS_SANDBOX
 
 # Do the thing!
 bwrap "$@"
