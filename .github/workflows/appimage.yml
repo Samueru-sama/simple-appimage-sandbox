@@ -29,7 +29,8 @@ jobs:
         URUNTIME="https://github.com/VHSgunzo/uruntime/releases/latest/download/uruntime-appimage-dwarfs-$ARCH"
         URUNTIME_LITE="https://github.com/VHSgunzo/uruntime/releases/latest/download/uruntime-appimage-dwarfs-lite-$ARCH"
         UPINFO="gh-releases-zsync|$(echo $GITHUB_REPOSITORY | tr '/' '|')|latest|*$ARCH.AppImage.zsync"
-        SAS_URL="https://github.com/Samueru-sama/simple-appimage-sandbox/raw/refs/heads/Samueru-sama-patch-5/sas.sh"
+
+        BWRAP_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/bubblewrap/official/bwrap/raw.dl"
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         BUSYBOX_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/busybox/nixpkgs/busybox/raw.dl"
         DASH_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/dash/ppkg/dash/raw.dl"
@@ -38,9 +39,9 @@ jobs:
         
         mkdir -p ./AppDir/bin
         cd ./AppDir
-        wget --retry-connrefused --tries=30 "$SAS_URL"        -O  ./sas            &
         wget --retry-connrefused --tries=30 "$AWK_URL"        -O  ./bin/awk        &
         wget --retry-connrefused --tries=30 "$BUSYBOX_URL"    -O  ./busybox        &
+        wget --retry-connrefused --tries=30 "$BWRAP_URL"      -O  ./bin/bwrap      &
         wget --retry-connrefused --tries=30 "$DASH_URL"       -O  ./bin/dash       &
         wget --retry-connrefused --tries=30 "$DWARFS_URL"     -O  ./bin/dwarfs     &
         wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL" -O  ./bin/squashfuse &
