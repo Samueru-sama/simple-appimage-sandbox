@@ -33,7 +33,7 @@ jobs:
         BWRAP_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/bubblewrap/official/bwrap/raw.dl"
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         BUSYBOX_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/busybox/nixpkgs/busybox/raw.dl"
-        SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/squashfuse/raw.dl"
+        SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/nixpkgs/squashfuse/raw.dl"
         
         mkdir -p ./AppDir/bin
         cp -v ./sas.sh ./AppDir/AppRun
