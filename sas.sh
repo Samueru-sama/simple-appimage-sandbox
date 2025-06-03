@@ -515,7 +515,7 @@ _make_bwrap_array() {
 
 # check if running as appimage
 if [ -d "$SAS_CURRENTDIR"/bin ]; then
-	PATH="$CURRENTDIR/bin:$PATH"
+	PATH="$SAS_CURRENTDIR/bin:$PATH"
 fi
 
 # check dependencies
