@@ -38,7 +38,11 @@ jobs:
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/squashfuse/raw.dl"
         
         mkdir -p ./AppDir/bin
+        cp -v ./sas.sh ./AppDir/sas
         cd ./AppDir
+        # patch sas to use our bundled sh
+        sed -i 's|/bin/sh|./bin/sh|g' ./sas
+
         wget --retry-connrefused --tries=30 "$AWK_URL"        -O  ./bin/awk        &
         wget --retry-connrefused --tries=30 "$BUSYBOX_URL"    -O  ./busybox        &
         wget --retry-connrefused --tries=30 "$BWRAP_URL"      -O  ./bin/bwrap      &
@@ -56,17 +60,6 @@ jobs:
         ln -s ../busybox ./bin/sed
         ln -s ../busybox ./bin/tail
         ln -s ../busybox ./bin/umount
-        
-        # patch sas to use our bundled sh
-        sed -i 's|/bin/sh|./bin/sh|g' ./sas
-
-        echo '#!/bin/sh
-        CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
-        PATH="$CURRENTDIR/bin:$PATH"
-        
-        # change workign dir since we have a relative sh shebang
-        cd "$CURRENTDIR" || exit 1
-        exec ./sas "$@"' > ./AppRun
 
         chmod +x ./AppRun ./sas ./busybox ./bin/*
         
@@ -88,7 +81,7 @@ jobs:
         ./uruntime-lite --appimage-addupdinfo "$UPINFO"
         
         echo "Generating AppImage..."
-        ./uruntime --appimage-mkdwarfs -f            \
+        ./uruntime --appimage-mkdwarfs -f      \
         	--set-owner 0 --set-group 0          \
         	--no-history --no-create-timestamp   \
         	--compression zstd:level=22 -S26 -B8 \
