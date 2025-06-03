@@ -47,6 +47,7 @@ SHARE_DEV_INPUT=1
 SHARE_DEV_ALL=1
 
 SAS_PRELOAD="${SAS_PRELOAD:-0}"
+SAS_CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
 
 SQUASHFS_APPIMAGE=0
 DWARFS_APPIMAGE=0
@@ -512,6 +513,10 @@ _make_bwrap_array() {
 	set +u
 }
 
+# check if running as appimage
+if [ -d "$SAS_CURRENTDIR"/bin ]; then
+	PATH="$CURRENTDIR/bin:$PATH"
+fi
 
 # check dependencies
 _dep_check $DEPENDENCIES
