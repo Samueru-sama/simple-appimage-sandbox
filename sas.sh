@@ -47,6 +47,7 @@ SHARE_DEV_INPUT=1
 SHARE_DEV_ALL=1
 
 SAS_PRELOAD="${SAS_PRELOAD:-0}"
+SAS_CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
 
 SQUASHFS_APPIMAGE=0
 DWARFS_APPIMAGE=0
@@ -239,7 +240,9 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	if _find_offset "$1"; then
+	if [ "$SAS_SANDBOX" = 1 ]; then
+		return 1
+	elif _find_offset "$1"; then
 		case "$(head -c "$offset" "$1")" in
 			*DWARFS*)   DWARFS_APPIMAGE=1  ;;
 			*squashfs*) SQUASHFS_APPIMAGE=1;;
@@ -402,6 +405,11 @@ _make_bwrap_array() {
 	  --ro-bind "$TARGET"   /app/"$APPNAME" \
 	  --setenv XDG_RUNTIME_DIR  /run/user/"$ID"
 
+	# TODO, add an option to allow FUSE in bwrap
+	set -- "$@" \
+	  --setenv SAS_SANDBOX 1 \
+	  --setenv APPIMAGE_EXTRACT_AND_RUN 1
+
 	for d in $DEFAULT_SYS_DIRS; do
 		if [ -d "$d" ]; then
 			set -- "$@" --ro-bind-try "$d" "$d"
@@ -432,8 +440,7 @@ _make_bwrap_array() {
 		  --bind-try "$MOUNT_POINT" "$MOUNT_POINT" \
 		  --setenv APPIMAGE  "$APP_APPIMAGE"       \
 		  --setenv APPDIR    "$MOUNT_POINT"        \
-		  --setenv ARGV0     "$APP_ARGV0"          \
-		  --setenv APPIMAGE_EXTRACT_AND_RUN 1
+		  --setenv ARGV0     "$APP_ARGV0"
 	fi
 	if [ "$SHARE_APP_TMPDIR" = 1 ]; then
 		set -- "$@" --bind-try /tmp /tmp
@@ -512,6 +519,10 @@ _make_bwrap_array() {
 	set +u
 }
 
+# check if running as appimage
+if [ -d "$SAS_CURRENTDIR"/bin ]; then
+	PATH="$SAS_CURRENTDIR/bin:$PATH"
+fi
 
 # check dependencies
 _dep_check $DEPENDENCIES
