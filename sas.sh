@@ -405,6 +405,11 @@ _make_bwrap_array() {
 	  --ro-bind "$TARGET"   /app/"$APPNAME" \
 	  --setenv XDG_RUNTIME_DIR  /run/user/"$ID"
 
+	# TODO, add an option to allow FUSE in bwrap
+	set -- "$@" \
+	  --setenv SAS_SANDBOX 1 \
+	  --setenv APPIMAGE_EXTRACT_AND_RUN 1
+
 	for d in $DEFAULT_SYS_DIRS; do
 		if [ -d "$d" ]; then
 			set -- "$@" --ro-bind-try "$d" "$d"
@@ -435,8 +440,7 @@ _make_bwrap_array() {
 		  --bind-try "$MOUNT_POINT" "$MOUNT_POINT" \
 		  --setenv APPIMAGE  "$APP_APPIMAGE"       \
 		  --setenv APPDIR    "$MOUNT_POINT"        \
-		  --setenv ARGV0     "$APP_ARGV0"          \
-		  --setenv APPIMAGE_EXTRACT_AND_RUN 1
+		  --setenv ARGV0     "$APP_ARGV0"
 	fi
 	if [ "$SHARE_APP_TMPDIR" = 1 ]; then
 		set -- "$@" --bind-try /tmp /tmp
@@ -790,10 +794,6 @@ _make_bwrap_array
 
 # Now merge the arrays
 eval set -- "$BWRAP_ARRAY" -- "$ARRAY"
-
-# set this var so that future instances of sas don't try to use fuse
-SAS_SANDBOX=1
-export SAS_SANDBOX
 
 # Do the thing!
 bwrap "$@"
