@@ -33,14 +33,11 @@ jobs:
         BWRAP_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/bubblewrap/official/bwrap/raw.dl"
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         BUSYBOX_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/busybox/nixpkgs/busybox/raw.dl"
-        DASH_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/dash/ppkg/dash/raw.dl"
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/squashfuse/raw.dl"
         
         mkdir -p ./AppDir/bin
         cp -v ./sas.sh ./AppDir/sas
         cd ./AppDir
-        # patch sas to use our bundled sh
-        sed -i 's|/bin/sh|./bin/sh|g' ./sas
 
         wget --retry-connrefused --tries=30 "$AWK_URL"        -O  ./bin/awk        &
         wget --retry-connrefused --tries=30 "$BUSYBOX_URL"    -O  ./busybox        &
@@ -49,7 +46,6 @@ jobs:
         wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL" -O  ./bin/squashfuse &
         
         wait
-        ln -s  ./dash    ./bin/sh
         ln -s ../busybox ./bin/cksum
         ln -s ../busybox ./bin/grep
         ln -s ../busybox ./bin/head
