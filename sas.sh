@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=0.7
+VERSION=0.8
 
 ADD_DIR=""
 ALLOW_BINDIR=0
@@ -596,6 +596,11 @@ THEME_DIRS="
 	"$DATADIR"/icons
 	"$DATADIR"/themes
 "
+
+# do not share X11 by default on wayland
+if [ -S "$RUNDIR"/"$WDISPLAY" ]; then
+	SHARE_APP_XDISPLAY=0
+fi
 
 # parse the array
 while :; do
