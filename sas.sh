@@ -65,7 +65,6 @@ DEPENDENCIES="
 	cksum
 	od
 	readlink
-	sed
 	squashfuse
 	tail
 	umount
@@ -98,7 +97,6 @@ DEFAULT_SYS_DIRS="
 _cleanup() {
 	set +u
 	if [ "$SAS_PRELOAD" != 1 ] && [ -n "$MOUNT_POINT" ]; then
-		sleep 2
 		umount "$MOUNT_POINT"
 		rm -rf "$MOUNT_POINT"
 	fi
@@ -311,11 +309,12 @@ _make_fakehome() {
 }
 
 _get_hash() {
-	hash1="$(head -c 1048576 "$1" | cksum | awk '{print $1; exit}')"
-	hash2="$(tail -c 1048576 "$1" | cksum | awk '{print $1; exit}')"
+	hash1="$(echo "$1" | cksum)"
+	hash2="$(tail -c 524288 "$1" | cksum)"
 	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
 		_error "Something went wrong getting hash from $1"
 	fi
+	HASH="${hash1%% *}"-"${hash2%% *}"
 }
 
 _find_offset() {
@@ -370,7 +369,7 @@ _find_offset() {
 }
 
 _make_mountpoint() {
-	MOUNT_POINT="$TMPDIR/.$APPNAME-$hash1-$hash2"
+	MOUNT_POINT="$TMPDIR/.$APPNAME-$HASH"
 	if [ -f "$MOUNT_POINT"/AppRun ] || [ -f "$MOUNT_POINT"/Run ]; then
 		return 0 # it is mounted already
 	else
@@ -445,8 +444,8 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_TMPDIR" = 1 ]; then
 		set -- "$@" --bind-try /tmp /tmp
 	else
-		APP_TMPDIR="$TMPDIR/.$APPNAME-tmpdir-$hash1"
-		mkdir -p "$TMPDIR/.$APPNAME-tmpdir-$hash1"
+		APP_TMPDIR="$TMPDIR/.$APPNAME-tmpdir-$HASH"
+		mkdir -p "$TMPDIR/.$APPNAME-tmpdir-$HASH"
 		set -- "$@" --bind-try /tmp   "$APP_TMPDIR"
 	fi
 	if [ "$SHARE_APP_DBUS" = 1 ]; then
