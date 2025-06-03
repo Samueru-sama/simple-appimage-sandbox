@@ -36,7 +36,7 @@ jobs:
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/squashfuse/raw.dl"
         
         mkdir -p ./AppDir/bin
-        cp -v ./sas.sh ./AppDir/sas
+        cp -v ./sas.sh ./AppDir/AppRun
         cd ./AppDir
 
         wget --retry-connrefused --tries=30 "$AWK_URL"        -O  ./bin/awk        &
@@ -54,7 +54,7 @@ jobs:
         ln -s ../busybox ./bin/sed
         ln -s ../busybox ./bin/tail
 
-        chmod +x ./AppRun ./sas ./busybox ./bin/*
+        chmod +x ./AppRun ./busybox ./bin/*
         
         VERSION="$(./AppRun --version)"
         [ -n "$VERSION" ]
