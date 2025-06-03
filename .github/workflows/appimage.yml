@@ -34,7 +34,6 @@ jobs:
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         BUSYBOX_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/busybox/nixpkgs/busybox/raw.dl"
         DASH_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/dash/ppkg/dash/raw.dl"
-        DWARFS_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/dwarfs/standalone/dwarfs/raw.dl"
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/squashfuse/raw.dl"
         
         mkdir -p ./AppDir/bin
@@ -47,7 +46,6 @@ jobs:
         wget --retry-connrefused --tries=30 "$BUSYBOX_URL"    -O  ./busybox        &
         wget --retry-connrefused --tries=30 "$BWRAP_URL"      -O  ./bin/bwrap      &
         wget --retry-connrefused --tries=30 "$DASH_URL"       -O  ./bin/dash       &
-        wget --retry-connrefused --tries=30 "$DWARFS_URL"     -O  ./bin/dwarfs     &
         wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL" -O  ./bin/squashfuse &
         
         wait
@@ -59,7 +57,6 @@ jobs:
         ln -s ../busybox ./bin/readlink
         ln -s ../busybox ./bin/sed
         ln -s ../busybox ./bin/tail
-        ln -s ../busybox ./bin/umount
 
         chmod +x ./AppRun ./sas ./busybox ./bin/*
         
