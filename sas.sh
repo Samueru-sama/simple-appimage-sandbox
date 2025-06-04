@@ -269,7 +269,7 @@ _check_xdgbase() {
 	for d do
 		eval "d=\$$d"
 		if ! _is_spooky "$d"; then
-			_error "Something is fishy here, bailing out..."
+			return 1
 		fi
 	done
 }
@@ -583,7 +583,8 @@ TEMPLATESDIR="${XDG_TEMPLATES_DIR:-$HOME/Templates}"
 VIDEOSDIR="${XDG_VIDEOS_DIR:-$HOME/Videos}"
 
 # check if any of the xdg vars are set some spooky value
-_check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS
+_check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS &
+xdgcheck=$!
 
 ZDOTDIR="$(_readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
@@ -801,6 +802,10 @@ if _is_appimage "$TARGET"; then
 	fi
 else
 	TO_EXEC="$TARGET"
+fi
+
+if ! wait "$xdgcheck"; then
+	_error "Something is fishy here, bailing out..."
 fi
 
 # Save current array and make bwrap array
