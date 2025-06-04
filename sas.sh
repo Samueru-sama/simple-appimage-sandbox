@@ -246,14 +246,20 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	if [ "$SAS_SANDBOX" = 1 ]; then
+	if [ "$SAS_SANDBOX" = 1 ] || ! _find_offset "$1"; then
 		return 1
-	elif _find_offset "$1"; then
-		case "$(head -c "$offset" "$1")" in
-			*DWARFS*)   DWARFS_APPIMAGE=1  ;;
-			*squashfs*) SQUASHFS_APPIMAGE=1;;
-			*|'')       return 1           ;;
-		esac
+	fi
+
+	# check for dwarfs or squashfs in parallel
+	head -c "$offset" "$1" | grep -aq 'squashfs' -m 1 &
+	sqfsck=$!
+	head -c "$offset" "$1" | grep -aq 'DWARFS' -m 1 &
+	dwfsck=$!
+
+	if wait "$dwfsck"; then
+		DWARFS_APPIMAGE=1
+	elif wait "$sqfsck"; then
+		SQUASHFS_APPIMAGE=1
 	else
 		return 1
 	fi
