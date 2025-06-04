@@ -309,12 +309,11 @@ _make_fakehome() {
 }
 
 _get_hash() {
-	hash1="$(echo "$1" | cksum)"
-	hash2="$(tail -c 524288 "$1" | cksum)"
-	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
+	HASH="$(tail -vc 1048576 "$1" | cksum)"
+	HASH="${HASH%% *}"
+	if [ -z "$HASH" ]; then
 		_error "Something went wrong getting hash from $1"
 	fi
-	HASH="${hash1%% *}"-"${hash2%% *}"
 }
 
 _find_offset() {
