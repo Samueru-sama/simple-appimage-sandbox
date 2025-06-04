@@ -251,9 +251,9 @@ _is_appimage() {
 	fi
 
 	# check for dwarfs or squashfs in parallel
-	head -c "$offset" "$1" | grep -aq 'squashfs' -m 1 &
+	head -c "$offset" "$1" | awk '/squashfs/{exit 0} END {exit 1}' &
 	sqfsck=$!
-	head -c "$offset" "$1" | grep -aq 'DWARFS' -m 1 &
+	head -c "$offset" "$1" | awk '/DWARFS/{exit 0} END {exit 1}' &
 	dwfsck=$!
 
 	if wait "$dwfsck"; then
