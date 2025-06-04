@@ -49,8 +49,7 @@ SHARE_DEV_ALL=1
 SAS_PRELOAD="${SAS_PRELOAD:-0}"
 SAS_CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
 
-SQUASHFS_APPIMAGE=0
-DWARFS_APPIMAGE=0
+IS_APPIMAGE=0
 APP_TMPDIR=""
 TARGET=""
 MOUNT_POINT=""
@@ -250,19 +249,12 @@ _is_appimage() {
 		return 1
 	fi
 
-	# check for dwarfs or squashfs in parallel
-	head -c "$offset" "$1" | grep -aq 'DWARFS' -m 1 &
-	dwfsck=$!
-	head -c "$offset" "$1" | grep -aq 'squashfs' -m 1 &
-	sqfsck=$!
-
-	if wait "$dwfsck"; then
-		DWARFS_APPIMAGE=1
-	elif wait "$sqfsck"; then
-		SQUASHFS_APPIMAGE=1
-	else
-		return 1
-	fi
+	case "$(head -c 10 "$1")" in
+		*ELF*AI|\
+		*ELF*RI|\
+		*ELF*AB) IS_APPIMAGE=1;;
+		''|*)    return 1     ;;
+	esac
 }
 
 _check_xdgbase() {
@@ -390,11 +382,8 @@ _make_mountpoint() {
 		mkdir -p "$MOUNT_POINT"
 	fi
 
-	if [ "$DWARFS_APPIMAGE" = 1 ]; then
-		dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT"
-	elif [ "$SQUASHFS_APPIMAGE" = 1 ]; then
-		squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT"
-	fi
+	squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT" 2>/dev/null \
+		|| dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT"
 }
 
 _make_bwrap_array() {
@@ -448,7 +437,7 @@ _make_bwrap_array() {
 		set -- "$@" --ro-bind  /sys/class/input  /sys/class/input
 	fi
 
-	if [ "$SQUASHFS_APPIMAGE" = 1 ] || [ "$DWARFS_APPIMAGE" = 1 ]; then
+	if [ "$IS_APPIMAGE" = 1 ]; then
 		set -- "$@" \
 		  --bind-try "$MOUNT_POINT" "$MOUNT_POINT" \
 		  --setenv APPIMAGE  "$APP_APPIMAGE"       \
