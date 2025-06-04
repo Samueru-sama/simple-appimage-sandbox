@@ -122,14 +122,6 @@ _dep_check() {
 	done
 }
 
-# Warn about slow shell
-_check_shell() {
-	sys_shell="$(readlink -f '/bin/sh' 2>/dev/null)"
-	if [ "${sys_shell##*/}" = "bash" ]; then
-		>&2 echo "   ⚠️  Detected bash as /bin/sh which is too slow"
-	fi
-}
-
 # get home or id directly from /etc/passwd, replaces id and getent
 _get_sys_info() {
 	case "$1" in
@@ -529,8 +521,6 @@ fi
 
 # check dependencies
 _dep_check $DEPENDENCIES
-
-_check_shell &
 
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
