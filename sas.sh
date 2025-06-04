@@ -55,6 +55,9 @@ TARGET=""
 MOUNT_POINT=""
 FAKEHOME=""
 
+mountcheck=""
+xdgcheck=""
+
 DEPENDENCIES="
 	awk
 	bwrap
@@ -237,7 +240,7 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	if [ "$SAS_SANDBOX" = 1 ] || ! _find_offset "$1"; then
+	if [ "$SAS_SANDBOX" = 1 ]; then
 		return 1
 	fi
 
@@ -374,8 +377,9 @@ _make_mountpoint() {
 		mkdir -p "$MOUNT_POINT"
 	fi
 
-	squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT" 2>/dev/null \
-		|| dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT"
+	( squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT" 2>/dev/null \
+		|| dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT" ) &
+	mountcheck=$!
 }
 
 _make_bwrap_array() {
@@ -560,10 +564,6 @@ PICTURESDIR="${XDG_PICTURES_DIR:-$HOME/Pictures}"
 PUBLICSHAREDIR="${XDG_PUBLICSHARE_DIR:-$HOME/Public}"
 TEMPLATESDIR="${XDG_TEMPLATES_DIR:-$HOME/Templates}"
 VIDEOSDIR="${XDG_VIDEOS_DIR:-$HOME/Videos}"
-
-# check if any of the xdg vars are set some spooky value
-_check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS &
-xdgcheck=$!
 
 ZDOTDIR="$(_readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
@@ -755,8 +755,6 @@ while :; do
 			;;
 		*|'')
 			if _is_target "$1"; then
-				_get_hash "$TARGET"
-				_make_fakehome
 				# We shift and break here to later pass
 				# the rest of the array to $TO_EXEC
 				shift
@@ -768,9 +766,30 @@ while :; do
 	esac
 done
 
-# Check if the app is an appimage, if so find offset and mount
+# get hash and prepare sandboxed home
+_get_hash "$TARGET"
+_make_fakehome
+
+# check if any of the xdg vars are spooky
+_check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS &
+xdgcheck=$!
+
+# Check if the app is an appimage, if so mount
 if _is_appimage "$TARGET"; then
+	_find_offset "$TARGET"
 	_make_mountpoint "$TARGET"
+fi
+
+# make bwrap array
+_make_bwrap_array
+
+if ! wait $xdgcheck; then
+	_error "Something is fishy here, bailing out..."
+elif ! wait $mountcheck; then
+	_error "Something went wrong trying to mount the filesystem..."
+fi
+
+if [ "$IS_APPIMAGE" = 1 ]; then
 	if [ -f "$MOUNT_POINT"/AppRun ]; then
 		TO_EXEC="$MOUNT_POINT"/AppRun
 	elif [ -f "$MOUNT_POINT"/Run ]; then
@@ -783,15 +802,8 @@ else
 	TO_EXEC="$TARGET"
 fi
 
-if ! wait "$xdgcheck"; then
-	_error "Something is fishy here, bailing out..."
-fi
-
-# Save current array and make bwrap array
+# Merge current array with bwrap array
 ARRAY=$(_save_array "$TO_EXEC" "$@")
-_make_bwrap_array
-
-# Now merge the arrays
 eval set -- "$BWRAP_ARRAY" -- "$ARRAY"
 
 # Do the thing!
