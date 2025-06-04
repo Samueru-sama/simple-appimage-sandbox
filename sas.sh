@@ -184,7 +184,7 @@ _is_target() {
 	if [ -f "$TARGET" ]; then
 		APPNAME="$(basename "$TARGET")"
 		APP_APPIMAGE="$TARGET"
-		APP_ARGV0="$(basename "$1")"
+		APP_ARGV0="$1"
 	else
 		return 1
 	fi
