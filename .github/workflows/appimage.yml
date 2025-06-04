@@ -33,24 +33,22 @@ jobs:
         BWRAP_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/bubblewrap/official/bwrap/raw.dl"
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         BUSYBOX_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/busybox/nixpkgs/busybox/raw.dl"
-        SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/squashfuse/raw.dl"
+        SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/nixpkgs/squashfuse/raw.dl"
         
         mkdir -p ./AppDir/bin
         cp -v ./sas.sh ./AppDir/AppRun
         cd ./AppDir
 
-        wget --retry-connrefused --tries=30 "$AWK_URL"        -O  ./bin/awk        &
-        wget --retry-connrefused --tries=30 "$BUSYBOX_URL"    -O  ./busybox        &
-        wget --retry-connrefused --tries=30 "$BWRAP_URL"      -O  ./bin/bwrap      &
-        wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL" -O  ./bin/squashfuse &
-        
-        wait
+        wget --retry-connrefused --tries=30 "$AWK_URL"        -O  ./bin/awk
+        wget --retry-connrefused --tries=30 "$BUSYBOX_URL"    -O  ./busybox
+        wget --retry-connrefused --tries=30 "$BWRAP_URL"      -O  ./bin/bwrap
+        wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL" -O  ./bin/squashfuse
+
         ln -s ../busybox ./bin/cksum
         ln -s ../busybox ./bin/grep
         ln -s ../busybox ./bin/head
         ln -s ../busybox ./bin/od
         ln -s ../busybox ./bin/readlink
-        ln -s ../busybox ./bin/sed
         ln -s ../busybox ./bin/tail
 
         chmod +x ./AppRun ./busybox ./bin/*

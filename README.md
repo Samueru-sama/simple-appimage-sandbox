@@ -101,7 +101,6 @@ grep
 head
 od
 readlink
-sed
 squashfuse
 tail
 umount

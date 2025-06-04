@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=0.8
+VERSION=0.9
 
 ADD_DIR=""
 ALLOW_BINDIR=0
@@ -65,7 +65,6 @@ DEPENDENCIES="
 	cksum
 	od
 	readlink
-	sed
 	squashfuse
 	tail
 	umount
@@ -98,7 +97,6 @@ DEFAULT_SYS_DIRS="
 _cleanup() {
 	set +u
 	if [ "$SAS_PRELOAD" != 1 ] && [ -n "$MOUNT_POINT" ]; then
-		sleep 2
 		umount "$MOUNT_POINT"
 		rm -rf "$MOUNT_POINT"
 	fi
@@ -123,6 +121,14 @@ _dep_check() {
 	for d do
 		command -v "$d" 1>/dev/null || _error "Missing dependency $d"
 	done
+}
+
+# Warn about slow shell
+_check_shell() {
+	sys_shell="$(readlink -f '/bin/sh' 2>/dev/null)"
+	if [ "${sys_shell##*/}" = "bash" ]; then
+		>&2 echo "   ⚠️  Detected bash as /bin/sh which is too slow"
+	fi
 }
 
 # get home or id directly from /etc/passwd, replaces id and getent
@@ -186,7 +192,7 @@ _is_target() {
 	if [ -f "$TARGET" ]; then
 		APPNAME="$(basename "$TARGET")"
 		APP_APPIMAGE="$TARGET"
-		APP_ARGV0="$(basename "$1")"
+		APP_ARGV0="$1"
 	else
 		return 1
 	fi
@@ -311,9 +317,9 @@ _make_fakehome() {
 }
 
 _get_hash() {
-	hash1="$(head -c 1048576 "$1" | cksum | awk '{print $1; exit}')"
-	hash2="$(tail -c 1048576 "$1" | cksum | awk '{print $1; exit}')"
-	if [ -z "$hash1" ] || [ -z "$hash2" ]; then
+	HASH="$(tail -vc 1048576 "$1" | cksum)"
+	HASH="${HASH%% *}"
+	if [ -z "$HASH" ]; then
 		_error "Something went wrong getting hash from $1"
 	fi
 }
@@ -370,7 +376,7 @@ _find_offset() {
 }
 
 _make_mountpoint() {
-	MOUNT_POINT="$TMPDIR/.$APPNAME-$hash1-$hash2"
+	MOUNT_POINT="$TMPDIR/.$APPNAME-$HASH"
 	if [ -f "$MOUNT_POINT"/AppRun ] || [ -f "$MOUNT_POINT"/Run ]; then
 		return 0 # it is mounted already
 	else
@@ -445,8 +451,8 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_TMPDIR" = 1 ]; then
 		set -- "$@" --bind-try /tmp /tmp
 	else
-		APP_TMPDIR="$TMPDIR/.$APPNAME-tmpdir-$hash1"
-		mkdir -p "$TMPDIR/.$APPNAME-tmpdir-$hash1"
+		APP_TMPDIR="$TMPDIR/.$APPNAME-tmpdir-$HASH"
+		mkdir -p "$TMPDIR/.$APPNAME-tmpdir-$HASH"
 		set -- "$@" --bind-try /tmp   "$APP_TMPDIR"
 	fi
 	if [ "$SHARE_APP_DBUS" = 1 ]; then
@@ -527,11 +533,7 @@ fi
 # check dependencies
 _dep_check $DEPENDENCIES
 
-# Warn about slow shell
-sys_shell="$(readlink -f '/bin/sh' 2>/dev/null)"
-if [ "${sys_shell##*/}" = "bash" ]; then
-	>&2 echo "   ⚠️  WARNING: Detected bash as /bin/sh which is too slow"
-fi
+_check_shell &
 
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
