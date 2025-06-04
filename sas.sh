@@ -377,6 +377,7 @@ _find_offset() {
 
 _make_mountpoint() {
 	MOUNT_POINT="$TMPDIR/.sas-mount-$USER/$APPNAME-$HASH"
+	>&2 printf '%s\n' "$MOUNT_POINT"
 	if [ -f "$MOUNT_POINT"/AppRun ] || [ -f "$MOUNT_POINT"/Run ]; then
 		return 0 # it is mounted already
 	else
@@ -388,7 +389,6 @@ _make_mountpoint() {
 	elif [ "$SQUASHFS_APPIMAGE" = 1 ]; then
 		squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT"
 	fi
-	>&2 printf '%s\n' "$MOUNT_POINT"
 }
 
 _make_bwrap_array() {
