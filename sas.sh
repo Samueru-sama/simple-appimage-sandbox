@@ -376,7 +376,7 @@ _find_offset() {
 }
 
 _make_mountpoint() {
-	MOUNT_POINT="$TMPDIR/.$APPNAME-$HASH"
+	MOUNT_POINT="$TMPDIR/.sas-mount-$USER/$APPNAME-$HASH"
 	if [ -f "$MOUNT_POINT"/AppRun ] || [ -f "$MOUNT_POINT"/Run ]; then
 		return 0 # it is mounted already
 	else
@@ -388,6 +388,7 @@ _make_mountpoint() {
 	elif [ "$SQUASHFS_APPIMAGE" = 1 ]; then
 		squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT"
 	fi
+	>&2 printf '%s\n' "$MOUNT_POINT"
 }
 
 _make_bwrap_array() {
@@ -451,9 +452,10 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_TMPDIR" = 1 ]; then
 		set -- "$@" --bind-try /tmp /tmp
 	else
-		APP_TMPDIR="$TMPDIR/.$APPNAME-tmpdir-$HASH"
-		mkdir -p "$TMPDIR/.$APPNAME-tmpdir-$HASH"
-		set -- "$@" --bind-try /tmp   "$APP_TMPDIR"
+		APP_TMPDIR="$TMPDIR/.sas-tmpdir-$USER/$APPNAME-$HASH"
+		mkdir -p "$APP_TMPDIR"
+		>&2 printf '%s\n' "$APP_TMPDIR"
+		set -- "$@" --bind-try /tmp "$APP_TMPDIR"
 	fi
 	if [ "$SHARE_APP_DBUS" = 1 ]; then
 		set -- "$@" \
