@@ -130,7 +130,7 @@ _get_sys_info() {
 	case "$1" in
 		home) i=6   ;;
 		id)   i=3   ;;
-		*|'') exit 1;;
+		''|*) exit 1;;
 	esac
 	awk -F':' -v U="$USER" -v F="$i" '$1==U {print $F; exit}' /etc/passwd
 }
@@ -595,7 +595,7 @@ fi
 # parse the array
 while :; do
 	case "$1" in
-		--help|-h|-H|'')
+		''|--help|-h|-H)
 			_help
 			;;
 		--version|-v|-V)
@@ -679,7 +679,7 @@ while :; do
 				all)   SHARE_DEV_ALL=1               ;;
 				dri)   SHARE_DEV_DRI=1               ;;
 				input) SHARE_DEV_INPUT=1             ;;
-				*|'') _error "$1 Unknown device '$2'";;
+				''|*) _error "$1 Unknown device '$2'";;
 			esac
 			shift
 			shift
@@ -689,7 +689,7 @@ while :; do
 				all)   SHARE_DEV_ALL=0               ;;
 				dri)   SHARE_DEV_DRI=0               ;;
 				input) SHARE_DEV_INPUT=0             ;;
-				*|'') _error "$1 Unknown device '$2'";;
+				''|*) _error "$1 Unknown device '$2'";;
 			esac
 			shift
 			shift
@@ -704,7 +704,7 @@ while :; do
 				network)    SHARE_APP_NETWORK=1      ;;
 				x11)        SHARE_APP_XDISPLAY=1     ;;
 				wayland)    SHARE_APP_WDISPLAY=1     ;;
-				*|'') _error "$1 Unknown socket '$2'";;
+				''|*) _error "$1 Unknown socket '$2'";;
 			esac
 			shift
 			shift
@@ -719,7 +719,7 @@ while :; do
 				network)    SHARE_APP_NETWORK=0      ;;
 				x11)        SHARE_APP_XDISPLAY=0     ;;
 				wayland)    SHARE_APP_WDISPLAY=0     ;;
-				*|'') _error "$1 Unknown socket '$2'";;
+				''|*) _error "$1 Unknown socket '$2'";;
 			esac
 			shift
 			shift
@@ -753,7 +753,7 @@ while :; do
 		-*)
 			_error "Unknown option: $1"
 			;;
-		*|'')
+		*)
 			if _is_target "$1"; then
 				# We shift and break here to later pass
 				# the rest of the array to $TO_EXEC
