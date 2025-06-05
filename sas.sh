@@ -49,12 +49,15 @@ SHARE_DEV_ALL=1
 SAS_PRELOAD="${SAS_PRELOAD:-0}"
 SAS_CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
 
-SQUASHFS_APPIMAGE=0
-DWARFS_APPIMAGE=0
+IS_APPIMAGE=0
+IS_TRUSTED_ONCE=0
 APP_TMPDIR=""
 TARGET=""
 MOUNT_POINT=""
 FAKEHOME=""
+
+mountcheck=""
+xdgcheck=""
 
 DEPENDENCIES="
 	awk
@@ -96,6 +99,9 @@ DEFAULT_SYS_DIRS="
 
 _cleanup() {
 	set +u
+	if [ "$IS_TRUSTED_ONCE" = 1 ]; then
+		chmod -x "$TARGET" || true
+	fi
 	if [ "$SAS_PRELOAD" != 1 ] && [ -n "$MOUNT_POINT" ]; then
 		umount "$MOUNT_POINT"
 		rm -rf "$MOUNT_POINT"
@@ -123,20 +129,12 @@ _dep_check() {
 	done
 }
 
-# Warn about slow shell
-_check_shell() {
-	sys_shell="$(readlink -f '/bin/sh' 2>/dev/null)"
-	if [ "${sys_shell##*/}" = "bash" ]; then
-		>&2 echo "   ⚠️  Detected bash as /bin/sh which is too slow"
-	fi
-}
-
 # get home or id directly from /etc/passwd, replaces id and getent
 _get_sys_info() {
 	case "$1" in
 		home) i=6   ;;
 		id)   i=3   ;;
-		*|'') exit 1;;
+		''|*) exit 1;;
 	esac
 	awk -F':' -v U="$USER" -v F="$i" '$1==U {print $F; exit}' /etc/passwd
 }
@@ -248,22 +246,21 @@ _is_spooky() {
 _is_appimage() {
 	if [ "$SAS_SANDBOX" = 1 ]; then
 		return 1
-	elif _find_offset "$1"; then
-		case "$(head -c "$offset" "$1")" in
-			*DWARFS*)   DWARFS_APPIMAGE=1  ;;
-			*squashfs*) SQUASHFS_APPIMAGE=1;;
-			*|'')       return 1           ;;
-		esac
-	else
-		return 1
 	fi
+
+	case "$(head -c 10 "$1")" in
+		*ELF*AI|\
+		*ELF*RI|\
+		*ELF*AB) IS_APPIMAGE=1;;
+		''|*)    return 1     ;;
+	esac
 }
 
 _check_xdgbase() {
 	for d do
 		eval "d=\$$d"
 		if ! _is_spooky "$d"; then
-			_error "Something is fishy here, bailing out..."
+			return 1
 		fi
 	done
 }
@@ -384,11 +381,9 @@ _make_mountpoint() {
 		mkdir -p "$MOUNT_POINT"
 	fi
 
-	if [ "$DWARFS_APPIMAGE" = 1 ]; then
-		dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT"
-	elif [ "$SQUASHFS_APPIMAGE" = 1 ]; then
-		squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT"
-	fi
+	( squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT" 2>/dev/null \
+		|| dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT" ) &
+	mountcheck=$!
 }
 
 _make_bwrap_array() {
@@ -442,7 +437,7 @@ _make_bwrap_array() {
 		set -- "$@" --ro-bind  /sys/class/input  /sys/class/input
 	fi
 
-	if [ "$SQUASHFS_APPIMAGE" = 1 ] || [ "$DWARFS_APPIMAGE" = 1 ]; then
+	if [ "$IS_APPIMAGE" = 1 ]; then
 		set -- "$@" \
 		  --bind-try "$MOUNT_POINT" "$MOUNT_POINT" \
 		  --setenv APPIMAGE  "$APP_APPIMAGE"       \
@@ -535,8 +530,6 @@ fi
 # check dependencies
 _dep_check $DEPENDENCIES
 
-_check_shell &
-
 # Make sure we always have the real home
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
@@ -576,9 +569,6 @@ PUBLICSHAREDIR="${XDG_PUBLICSHARE_DIR:-$HOME/Public}"
 TEMPLATESDIR="${XDG_TEMPLATES_DIR:-$HOME/Templates}"
 VIDEOSDIR="${XDG_VIDEOS_DIR:-$HOME/Videos}"
 
-# check if any of the xdg vars are set some spooky value
-_check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS
-
 ZDOTDIR="$(_readlink -f "${ZDOTDIR:-$HOME}")"
 TMPDIR="${TMPDIR:-/tmp}"
 WDISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
@@ -586,19 +576,19 @@ XDISPLAY="${XAUTHORITY:-$RUNDIR/Xauthority}"
 
 # Default dirs to give read access for working theming
 THEME_DIRS="
-	"$CONFIGDIR"/dconf
-	"$CONFIGDIR"/fontconfig
-	"$CONFIGDIR"/gtk-3.0
-	"$CONFIGDIR"/gtk3.0
-	"$CONFIGDIR"/gtk-4.0
-	"$CONFIGDIR"/gtk4.0
-	"$CONFIGDIR"/kdeglobals
-	"$CONFIGDIR"/Kvantum
-	"$CONFIGDIR"/lxde
-	"$CONFIGDIR"/qt5ct
-	"$CONFIGDIR"/qt6ct
-	"$DATADIR"/icons
-	"$DATADIR"/themes
+	$CONFIGDIR/dconf
+	$CONFIGDIR/fontconfig
+	$CONFIGDIR/gtk-3.0
+	$CONFIGDIR/gtk3.0
+	$CONFIGDIR/gtk-4.0
+	$CONFIGDIR/gtk4.0
+	$CONFIGDIR/kdeglobals
+	$CONFIGDIR/Kvantum
+	$CONFIGDIR/lxde
+	$CONFIGDIR/qt5ct
+	$CONFIGDIR/qt6ct
+	$DATADIR/icons
+	$DATADIR/themes
 "
 
 # do not share X11 by default on wayland
@@ -609,7 +599,7 @@ fi
 # parse the array
 while :; do
 	case "$1" in
-		--help|-h|-H|'')
+		''|--help|-h|-H)
 			_help
 			;;
 		--version|-v|-V)
@@ -693,7 +683,7 @@ while :; do
 				all)   SHARE_DEV_ALL=1               ;;
 				dri)   SHARE_DEV_DRI=1               ;;
 				input) SHARE_DEV_INPUT=1             ;;
-				*|'') _error "$1 Unknown device '$2'";;
+				''|*) _error "$1 Unknown device '$2'";;
 			esac
 			shift
 			shift
@@ -703,7 +693,7 @@ while :; do
 				all)   SHARE_DEV_ALL=0               ;;
 				dri)   SHARE_DEV_DRI=0               ;;
 				input) SHARE_DEV_INPUT=0             ;;
-				*|'') _error "$1 Unknown device '$2'";;
+				''|*) _error "$1 Unknown device '$2'";;
 			esac
 			shift
 			shift
@@ -718,7 +708,7 @@ while :; do
 				network)    SHARE_APP_NETWORK=1      ;;
 				x11)        SHARE_APP_XDISPLAY=1     ;;
 				wayland)    SHARE_APP_WDISPLAY=1     ;;
-				*|'') _error "$1 Unknown socket '$2'";;
+				''|*) _error "$1 Unknown socket '$2'";;
 			esac
 			shift
 			shift
@@ -733,7 +723,7 @@ while :; do
 				network)    SHARE_APP_NETWORK=0      ;;
 				x11)        SHARE_APP_XDISPLAY=0     ;;
 				wayland)    SHARE_APP_WDISPLAY=0     ;;
-				*|'') _error "$1 Unknown socket '$2'";;
+				''|*) _error "$1 Unknown socket '$2'";;
 			esac
 			shift
 			shift
@@ -758,7 +748,8 @@ while :; do
 			shift
 			shift
 			;;
-		--trust-once) # aisap compat
+		--trust-once)
+			IS_TRUSTED_ONCE=1
 			shift
 			;;
 		--)
@@ -767,10 +758,8 @@ while :; do
 		-*)
 			_error "Unknown option: $1"
 			;;
-		*|'')
+		*)
 			if _is_target "$1"; then
-				_get_hash "$TARGET"
-				_make_fakehome
 				# We shift and break here to later pass
 				# the rest of the array to $TO_EXEC
 				shift
@@ -782,9 +771,30 @@ while :; do
 	esac
 done
 
-# Check if the app is an appimage, if so find offset and mount
+# get hash and prepare sandboxed home
+_get_hash "$TARGET"
+_make_fakehome
+
+# check if any of the xdg vars are spooky
+_check_xdgbase $XDG_BASE_DIRS $XDG_USER_DIRS &
+xdgcheck=$!
+
+# Check if the app is an appimage, if so mount
 if _is_appimage "$TARGET"; then
+	_find_offset "$TARGET"
 	_make_mountpoint "$TARGET"
+fi
+
+# make bwrap array
+_make_bwrap_array
+
+if ! wait $xdgcheck; then
+	_error "Something is fishy here, bailing out..."
+elif ! wait $mountcheck; then
+	_error "Something went wrong trying to mount the filesystem..."
+fi
+
+if [ "$IS_APPIMAGE" = 1 ]; then
 	if [ -f "$MOUNT_POINT"/AppRun ]; then
 		TO_EXEC="$MOUNT_POINT"/AppRun
 	elif [ -f "$MOUNT_POINT"/Run ]; then
@@ -797,12 +807,13 @@ else
 	TO_EXEC="$TARGET"
 fi
 
-# Save current array and make bwrap array
+# Merge current array with bwrap array
 ARRAY=$(_save_array "$TO_EXEC" "$@")
-_make_bwrap_array
-
-# Now merge the arrays
 eval set -- "$BWRAP_ARRAY" -- "$ARRAY"
+
+if [ ! -x "$TARGET" ] && [ "$IS_TRUSTED_ONCE" = 1 ]; then
+	chmod +x "$TARGET" || true
+fi
 
 # Do the thing!
 bwrap "$@"
