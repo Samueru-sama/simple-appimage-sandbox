@@ -572,19 +572,19 @@ XDISPLAY="${XAUTHORITY:-$RUNDIR/Xauthority}"
 
 # Default dirs to give read access for working theming
 THEME_DIRS="
-	"$CONFIGDIR"/dconf
-	"$CONFIGDIR"/fontconfig
-	"$CONFIGDIR"/gtk-3.0
-	"$CONFIGDIR"/gtk3.0
-	"$CONFIGDIR"/gtk-4.0
-	"$CONFIGDIR"/gtk4.0
-	"$CONFIGDIR"/kdeglobals
-	"$CONFIGDIR"/Kvantum
-	"$CONFIGDIR"/lxde
-	"$CONFIGDIR"/qt5ct
-	"$CONFIGDIR"/qt6ct
-	"$DATADIR"/icons
-	"$DATADIR"/themes
+	$CONFIGDIR/dconf
+	$CONFIGDIR/fontconfig
+	$CONFIGDIR/gtk-3.0
+	$CONFIGDIR/gtk3.0
+	$CONFIGDIR/gtk-4.0
+	$CONFIGDIR/gtk4.0
+	$CONFIGDIR/kdeglobals
+	$CONFIGDIR/Kvantum
+	$CONFIGDIR/lxde
+	$CONFIGDIR/qt5ct
+	$CONFIGDIR/qt6ct
+	$DATADIR/icons
+	$DATADIR/themes
 "
 
 # do not share X11 by default on wayland
