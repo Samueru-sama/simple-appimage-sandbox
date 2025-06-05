@@ -50,6 +50,7 @@ SAS_PRELOAD="${SAS_PRELOAD:-0}"
 SAS_CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
 
 IS_APPIMAGE=0
+IS_TRUSTED_ONCE=0
 APP_TMPDIR=""
 TARGET=""
 MOUNT_POINT=""
@@ -98,6 +99,9 @@ DEFAULT_SYS_DIRS="
 
 _cleanup() {
 	set +u
+	if [ "$IS_TRUSTED_ONCE" = 1 ]; then
+		chmod -x "$TARGET" || true
+	fi
 	if [ "$SAS_PRELOAD" != 1 ] && [ -n "$MOUNT_POINT" ]; then
 		umount "$MOUNT_POINT"
 		rm -rf "$MOUNT_POINT"
@@ -744,7 +748,8 @@ while :; do
 			shift
 			shift
 			;;
-		--trust-once) # aisap compat
+		--trust-once)
+			IS_TRUSTED_ONCE=1
 			shift
 			;;
 		--)
@@ -805,6 +810,10 @@ fi
 # Merge current array with bwrap array
 ARRAY=$(_save_array "$TO_EXEC" "$@")
 eval set -- "$BWRAP_ARRAY" -- "$ARRAY"
+
+if [ ! -x "$TARGET" ] && [ "$IS_TRUSTED_ONCE" = 1 ]; then
+	chmod +x "$TARGET" || true
+fi
 
 # Do the thing!
 bwrap "$@"
