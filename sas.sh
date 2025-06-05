@@ -186,7 +186,8 @@ _save_array() {
 }
 
 _is_target() {
-	TARGET="$(readlink -f "$1")"
+	app_path="$(command -v "$1" 2>/dev/null)"
+	TARGET="$(readlink -f "${app_path:-$1}")"
 	if [ -f "$TARGET" ]; then
 		APPNAME="$(basename "$TARGET")"
 		APP_APPIMAGE="$TARGET"
