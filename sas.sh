@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=0.9
+VERSION=1.0
 
 ADD_DIR=""
 ALLOW_BINDIR=0
@@ -186,7 +186,8 @@ _save_array() {
 }
 
 _is_target() {
-	TARGET="$(readlink -f "$1")"
+	app_path="$(command -v "$1" 2>/dev/null)"
+	TARGET="$(readlink -f "${app_path:-$1}")"
 	if [ -f "$TARGET" ]; then
 		APPNAME="$(basename "$TARGET")"
 		APP_APPIMAGE="$TARGET"
@@ -804,7 +805,7 @@ if [ "$IS_APPIMAGE" = 1 ]; then
 		_error "$TARGET does not contain an AppRun or Run file"
 	fi
 else
-	TO_EXEC="$TARGET"
+	TO_EXEC=/app/"$APPNAME"
 fi
 
 # Merge current array with bwrap array
