@@ -120,7 +120,7 @@ jobs:
 
         #Version Release
         - name: Continuous Releaser
-          uses: softprops/action-gh-release@v2
+          uses: softprops/action-gh-release@v2.2.2
           if: ${{ github.ref_name == 'main' }}
           with:
             name: "${{ env.APP_VERSION }}"
