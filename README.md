@@ -1,4 +1,8 @@
-# simple-appimage-sandbox
+# simple-appimage-sandbox 🐧
+
+[![GitHub Downloads](https://img.shields.io/github/downloads/Samueru-sama/simple-appimage-sandbox/total?logo=github&label=GitHub%20Downloads)](https://github.com/Samueru-sama/simple-appimage-sandbox/releases/latest)
+[![CI Build Status](https://github.com//Samueru-sama/simple-appimage-sandbox/actions/workflows/appimage.yml/badge.svg)](https://github.com/Samueru-sama/simple-appimage-sandbox/releases/latest)
+
 Tool to sandbox AppImages with bubblewrap easily, written in POSIX shell.
 
 Can also sandbox regular binaries and almost anything with an appended filesystem (RunImage, AppBundle, etc). 
