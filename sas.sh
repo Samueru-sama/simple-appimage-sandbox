@@ -590,6 +590,7 @@ THEME_DIRS="
 	$CONFIGDIR/qt6ct
 	$DATADIR/icons
 	$DATADIR/themes
+	$DATADIR/fonts
 "
 
 # do not share X11 by default on wayland
