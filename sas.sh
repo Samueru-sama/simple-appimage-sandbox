@@ -136,7 +136,7 @@ _dep_check() {
 _get_sys_info() {
 	case "$1" in
 		home) i=6   ;;
-		uid)  i=3   ;;
+		id)   i=3   ;;
 		gid)  i=4   ;;
 		''|*) exit 1;;
 	esac
@@ -389,7 +389,7 @@ _make_mountpoint() {
 
 	# common flags for squashfuse and dwarfs
 	set -- \
-	  -o ro,nodev,uid="$UID",gid="$GID" \
+	  -o ro,nodev,uid="$ID",gid="$GID" \
 	  -o offset="$offset" "$TARGET" "$MOUNT_POINT"
 	( squashfuse "$@" 2>/dev/null || dwarfs "$@" ) &
 	mountcheck=$!
@@ -400,7 +400,7 @@ _make_bwrap_array() {
 	set -- \
 	  --dir /app                  \
 	  --perms 0700                \
-	  --dir /run/user/"$UID"      \
+	  --dir /run/user/"$ID"      \
 	  --bind "$FAKEHOME" "$HOME"  \
 	  --proc /proc                \
 	  --unshare-user-try          \
@@ -414,7 +414,7 @@ _make_bwrap_array() {
 	  --setenv  TMPDIR  /tmp      \
 	  --setenv  HOME    "$HOME"   \
 	  --ro-bind "$TARGET"   /app/"$APPNAME" \
-	  --setenv XDG_RUNTIME_DIR  /run/user/"$UID"
+	  --setenv XDG_RUNTIME_DIR  /run/user/"$ID"
 
 	if [ "$ALLOW_FUSE" = 1 ]; then
 		# CAP_SYS_ADMIN needed when allowing FUSE inside sandbox
@@ -469,16 +469,16 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_DBUS" = 1 ]; then
 		set -- "$@" \
 		  --ro-bind-try /var/lib/dbus  /var/lib/dbus  \
-		  --ro-bind-try "$RUNDIR"/bus  /run/user/"$UID"/bus
+		  --ro-bind-try "$RUNDIR"/bus  /run/user/"$ID"/bus
 	fi
 	if [ "$SHARE_APP_AUDIO" = 1 ]; then
 		set -- "$@" \
 		  --dev-bind-try /dev/snd       /dev/snd \
-		  --ro-bind-try "$RUNDIR"/pulse /run/user/"$UID"/pulse
+		  --ro-bind-try "$RUNDIR"/pulse /run/user/"$ID"/pulse
 	fi
 	if [ "$SHARE_APP_PIPEWIRE" = 1 ]; then
 		set -- "$@" \
-		  --ro-bind-try "$RUNDIR"/pipewire-0 /run/user/"$UID"/pipewire-0
+		  --ro-bind-try "$RUNDIR"/pipewire-0 /run/user/"$ID"/pipewire-0
 	fi
 	if [ "$SHARE_APP_XDISPLAY" = 1 ]; then
 		set -- "$@" \
@@ -489,7 +489,7 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_WDISPLAY" = 1 ]; then
 		set -- "$@" \
 		  --setenv WAYLAND_DISPLAY wayland-0 \
-		  --ro-bind-try "$RUNDIR"/"$WDISPLAY" /run/user/"$UID"/wayland-0
+		  --ro-bind-try "$RUNDIR"/"$WDISPLAY" /run/user/"$ID"/wayland-0
 	fi
 	if [ "$SHARE_APP_NETWORK" = 1 ]; then
 		set -- "$@" --share-net
@@ -548,18 +548,18 @@ _dep_check $DEPENDENCIES
 USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
 	SAS_HOME="$(_get_sys_info home)"
-	SAS_UID="$(_get_sys_info uid)"
+	SAS_ID="$(_get_sys_info id)"
 	SAS_GID="$(_get_sys_info gid)"
 	# export internal variables this way apps with
 	# restricted access to /etc can still use this
-	export SAS_HOME SAS_UID SAS_GID
+	export SAS_HOME SAS_ID SAS_GID
 fi
 
 HOME="$SAS_HOME"
-UID="$SAS_UID"
+ID="$SAS_ID"
 GID="$SAS_GID"
 
-if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$UID" ] || [ -z "$GID" ]; then
+if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ] || [ -z "$GID" ]; then
 	_error "This system is fucked up"
 fi
 
@@ -569,7 +569,7 @@ DATADIR="${XDG_DATA_HOME:-$HOME/.local/share}"
 CONFIGDIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 CACHEDIR="${XDG_CACHE_HOME:-$HOME/.cache}"
 STATEDIR="${XDG_STATE_HOME:-$HOME/.local/state}"
-RUNDIR="${XDG_RUNTIME_DIR:-/run/user/$UID}"
+RUNDIR="${XDG_RUNTIME_DIR:-/run/user/$ID}"
 
 # check xdg user dirs
 _check_userdirs || true
