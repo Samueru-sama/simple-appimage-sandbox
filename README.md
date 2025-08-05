@@ -11,12 +11,12 @@ Supports DwarFS and SquashFS filesystems.
 
 # Usage
 
-`./sas.sh [OPTIONS] /path/to/app`
+`./sas.AppImage [OPTIONS] /path/to/app`
 
 Example:
 
 ```
-./sas.sh --rm-socket network --add-dir ~/"My randomdir" --add-dir xdg-download:rw ./My-random.AppImage
+./sas.AppImage --rm-socket network --add-dir ~/"My randomdir" --add-dir xdg-download:rw ./My-random.AppImage
 ```
 
 Options: 
@@ -29,6 +29,8 @@ Options:
 * `--data-dir`, `--sandboxed-home` specifies the location of the sandboxed home. Otherwise defaults to `ApplicationName.home` next to the application to sandbox.
 
 * `--add-dir`, `--add-file` directory/file to give read access to. In order to add write access add `:rw` to the file, example `--add-dir /media/drive:rw`.
+
+* `--allow-fuse` Enables using FUSE inside the sandbox, only recommended for apps like Steam that need to launch other AppImages. NOTE: Using this option will switch the `bwrap` in the AppImage builds of `sas` to a [patched](https://github.com/VHSgunzo/bubblewrap-static/blob/main/bwrap.patch) bubblewrap that allows nested bwrap sessions.
 
 * `--no-config` Don't use existing configuration files, by default we try to give access to a directory matching the name of the given application in the following locations:  
 
@@ -43,6 +45,7 @@ XDG_DATA_HOME
 ```
 $XDG_DATA_HOME/icons
 $XDG_DATA_HOME/themes
+$XDG_DATA_HOME/fonts
 $XDG_CONFIG_HOME/dconf
 $XDG_CONFIG_HOME/fontconfig
 $XDG_CONFIG_HOME/gtk-3.0
