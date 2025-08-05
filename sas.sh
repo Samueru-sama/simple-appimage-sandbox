@@ -400,7 +400,7 @@ _make_bwrap_array() {
 	set -- \
 	  --dir /app                  \
 	  --perms 0700                \
-	  --dir /run/user/"$ID"      \
+	  --dir /run/user/"$ID"       \
 	  --bind "$FAKEHOME" "$HOME"  \
 	  --proc /proc                \
 	  --unshare-user-try          \
