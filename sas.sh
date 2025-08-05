@@ -249,7 +249,8 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	if [ "$SAS_SANDBOX" = 1 ] && [ "$ALLOW_FUSE" = 0 ]; then
+	# do not check if in nested sandbox or allowing fuse
+	if [ "$SAS_SANDBOX" = 1 ] || [ "$ALLOW_FUSE" = 1 ]; then
 		return 1
 	fi
 
