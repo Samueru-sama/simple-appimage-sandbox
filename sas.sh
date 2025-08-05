@@ -15,6 +15,7 @@ fi
 VERSION=1.0
 
 ADD_DIR=""
+ALLOW_FUSE=0
 ALLOW_BINDIR=0
 ALLOW_DATADIR=0
 ALLOW_CONFIGDIR=0
@@ -31,6 +32,8 @@ ALLOW_PICTURESDIR=0
 ALLOW_PUBLICSHAREDIR=0
 ALLOW_TEMPLATESDIR=0
 ALLOW_VIDEOSDIR=0
+
+BWRAPCMD="bwrap"
 
 SHARE_APP_CONFIG=1
 SHARE_APP_THEME=1
@@ -245,7 +248,7 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	if [ "$SAS_SANDBOX" = 1 ]; then
+	if [ "$SAS_SANDBOX" = 1 ] && [ "$ALLOW_FUSE" = 0 ]; then
 		return 1
 	fi
 
@@ -403,15 +406,19 @@ _make_bwrap_array() {
 	  --unshare-cgroup-try        \
 	  --new-session               \
 	  --unshare-ipc               \
-	  --setenv  TMPDIR    /tmp    \
-	  --setenv  HOME      "$HOME" \
+	  --setenv SAS_SANDBOX 1      \
+	  --setenv  TMPDIR  /tmp      \
+	  --setenv  HOME    "$HOME"   \
 	  --ro-bind "$TARGET"   /app/"$APPNAME" \
 	  --setenv XDG_RUNTIME_DIR  /run/user/"$ID"
 
-	# TODO, add an option to allow FUSE in bwrap
-	set -- "$@" \
-	  --setenv SAS_SANDBOX 1 \
-	  --setenv APPIMAGE_EXTRACT_AND_RUN 1
+	if [ "$ALLOW_FUSE" = 1 ]; then
+		# CAP_SYS_ADMIN needed when allowing FUSE inside sandbox
+		set -- "$@" --cap-add CAP_SYS_ADMIN
+	else
+		# lets appimages run inside container without FUSE
+		set -- "$@" --setenv APPIMAGE_EXTRACT_AND_RUN 1
+	fi
 
 	for d in $DEFAULT_SYS_DIRS; do
 		if [ -d "$d" ]; then
@@ -620,6 +627,14 @@ while :; do
 			SHARE_APP_TMPDIR=0
 			shift
 			;;
+		--allow-fuse)
+			ALLOW_FUSE=1
+			# Use patched bwrap that allows nested capabilities
+			if command -v bwrap.patched 1>/dev/null; then
+				BWRAPCMD="bwrap.patched"
+			fi
+			shift
+			;;
 		--keep-mount|--preload)
 			SAS_PRELOAD=1
 			shift
@@ -818,4 +833,4 @@ if [ ! -x "$TARGET" ] && [ "$IS_TRUSTED_ONCE" = 1 ]; then
 fi
 
 # Do the thing!
-bwrap "$@"
+"$BWRAPCMD" "$@"
