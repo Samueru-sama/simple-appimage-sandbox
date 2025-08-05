@@ -431,19 +431,16 @@ _make_bwrap_array() {
 		set -- "$@" --dev-bind-try /dev  /dev
 	else
 		set -- "$@" --dev /dev
-		if [ "$SHARE_DEV_DRI" = 1 ]; then
-			set -- "$@" \
-			--dev-bind-try /dev/nvidiactl          /dev/nvidiactl       \
-			--dev-bind-try /dev/nvidia0            /dev/nvidia0         \
-			--dev-bind-try /dev/nvidia-modeset     /dev/nvidia-modeset
-		fi
 	fi
 	if [ "$SHARE_DEV_DRI" = 1 ]; then
 		set -- "$@" \
-		--ro-bind-try  /usr/share/glvnd        /usr/share/glvnd     \
-		--ro-bind-try  /usr/share/vulkan       /usr/share/vulkan    \
-		--ro-bind-try  /sys/dev/char           /sys/dev/char        \
-		--ro-bind-try  /sys/devices/pci0000:00 /sys/devices/pci0000:00
+		  --ro-bind-try  /usr/share/glvnd        /usr/share/glvnd     \
+		  --ro-bind-try  /usr/share/vulkan       /usr/share/vulkan    \
+		  --ro-bind-try  /sys/dev/char           /sys/dev/char        \
+		  --dev-bind-try /dev/nvidiactl          /dev/nvidiactl       \
+		  --dev-bind-try /dev/nvidia0            /dev/nvidia0         \
+		  --dev-bind-try /dev/nvidia-modeset     /dev/nvidia-modeset  \
+		  --ro-bind-try  /sys/devices/pci0000:00 /sys/devices/pci0000:00
 	fi
 	if [ "$SHARE_DEV_INPUT" = 1 ]; then
 		set -- "$@" --ro-bind  /sys/class/input  /sys/class/input
