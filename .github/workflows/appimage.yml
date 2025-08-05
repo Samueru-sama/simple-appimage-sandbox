@@ -95,6 +95,7 @@ jobs:
        overwrite: true
 
   release:
+      if: ${{ github.ref_name == 'main' }}
       needs: [build]
       permissions: write-all
       runs-on: ubuntu-latest
