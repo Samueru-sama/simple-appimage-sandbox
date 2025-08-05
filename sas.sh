@@ -257,7 +257,7 @@ _is_appimage() {
 		*ELF*RI|\
 		*ELF*AB) IS_APPIMAGE=1;;
 		''|*)    return 1     ;;
-	esac
+	esac 2>/dev/null
 }
 
 _check_xdgbase() {
@@ -385,8 +385,8 @@ _make_mountpoint() {
 		mkdir -p "$MOUNT_POINT"
 	fi
 
-	( squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT" 2>/dev/null \
-		|| dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT" ) &
+	( squashfuse -o ro,nodev,uid=$(id -u),gid=$(id -g) -o offset="$offset" "$TARGET" "$MOUNT_POINT" 2>/dev/null \
+		|| dwarfs -o ro,nodev,uid=$(id -u),gid=$(id -g) -o offset="$offset" "$TARGET" "$MOUNT_POINT" ) &
 	mountcheck=$!
 }
 
@@ -397,7 +397,6 @@ _make_bwrap_array() {
 	  --perms 0700                \
 	  --dir /run/user/"$ID"       \
 	  --bind "$FAKEHOME" "$HOME"  \
-	  --dev /dev                  \
 	  --proc /proc                \
 	  --unshare-user-try          \
 	  --unshare-pid               \
@@ -430,16 +429,21 @@ _make_bwrap_array() {
 		SHARE_DEV_DRI=1
 		SHARE_DEV_INPUT=1
 		set -- "$@" --dev-bind-try /dev  /dev
+	else
+		set -- "$@" --dev /dev
+		if [ "$SHARE_DEV_DRI" = 1 ]; then
+			set -- "$@" \
+			--dev-bind-try /dev/nvidiactl          /dev/nvidiactl       \
+			--dev-bind-try /dev/nvidia0            /dev/nvidia0         \
+			--dev-bind-try /dev/nvidia-modeset     /dev/nvidia-modeset
+		fi
 	fi
 	if [ "$SHARE_DEV_DRI" = 1 ]; then
 		set -- "$@" \
-		  --ro-bind-try  /usr/share/glvnd        /usr/share/glvnd     \
-		  --ro-bind-try  /usr/share/vulkan       /usr/share/vulkan    \
-		  --dev-bind-try /dev/nvidiactl          /dev/nvidiactl       \
-		  --dev-bind-try /dev/nvidia0            /dev/nvidia0         \
-		  --dev-bind-try /dev/nvidia-modeset     /dev/nvidia-modeset  \
-		  --ro-bind-try  /sys/dev/char           /sys/dev/char        \
-		  --ro-bind-try  /sys/devices/pci0000:00 /sys/devices/pci0000:00
+		--ro-bind-try  /usr/share/glvnd        /usr/share/glvnd     \
+		--ro-bind-try  /usr/share/vulkan       /usr/share/vulkan    \
+		--ro-bind-try  /sys/dev/char           /sys/dev/char        \
+		--ro-bind-try  /sys/devices/pci0000:00 /sys/devices/pci0000:00
 	fi
 	if [ "$SHARE_DEV_INPUT" = 1 ]; then
 		set -- "$@" --ro-bind  /sys/class/input  /sys/class/input
