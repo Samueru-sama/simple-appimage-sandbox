@@ -310,7 +310,7 @@ _make_fakehome() {
 		FAKEHOME="$(dirname "$TARGET")/$APPNAME.home"
 	fi
 
-	mkdir -p "$FAKEHOME"/app 2>/dev/null || true
+	mkdir -p "$FAKEHOME"/.app 2>/dev/null || true
 
 	if ! _is_spooky "$FAKEHOME"; then
 		_error "Cannot use $1 as sandboxed home"
@@ -402,7 +402,7 @@ _make_bwrap_array() {
 	  --perms 0700                        \
 	  --dir /run/user/"$ID"               \
 	  --bind "$FAKEHOME" "$HOME"          \
-	  --bind "$FAKEHOME"/app /app         \
+	  --bind "$FAKEHOME"/.app /app        \
 	  --ro-bind "$TARGET" /app/"$APPNAME" \
 	  --proc /proc                        \
 	  --unshare-user-try                  \
