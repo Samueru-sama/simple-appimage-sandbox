@@ -638,9 +638,13 @@ while :; do
 			;;
 		--allow-fuse)
 			ALLOW_FUSE=1
-			# Use patched bwrap that allows nested capabilities
+			shift
+			;;
+		--allow-nested-caps)
 			if command -v bwrap.patched 1>/dev/null; then
 				BWRAPCMD="bwrap.patched"
+			else
+				_error "Missing patched bwrap needed for $1"
 			fi
 			shift
 			;;
