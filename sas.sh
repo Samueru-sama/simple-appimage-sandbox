@@ -12,9 +12,10 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.0
+VERSION=1.1
 
 ADD_DIR=""
+ALLOW_FUSE=0
 ALLOW_BINDIR=0
 ALLOW_DATADIR=0
 ALLOW_CONFIGDIR=0
@@ -31,6 +32,8 @@ ALLOW_PICTURESDIR=0
 ALLOW_PUBLICSHAREDIR=0
 ALLOW_TEMPLATESDIR=0
 ALLOW_VIDEOSDIR=0
+
+BWRAPCMD="bwrap"
 
 SHARE_APP_CONFIG=1
 SHARE_APP_THEME=1
@@ -134,6 +137,7 @@ _get_sys_info() {
 	case "$1" in
 		home) i=6   ;;
 		id)   i=3   ;;
+		gid)  i=4   ;;
 		''|*) exit 1;;
 	esac
 	awk -F':' -v U="$USER" -v F="$i" '$1==U {print $F; exit}' /etc/passwd
@@ -245,7 +249,8 @@ _is_spooky() {
 }
 
 _is_appimage() {
-	if [ "$SAS_SANDBOX" = 1 ]; then
+	# do not check if in nested sandbox or allowing fuse
+	if [ "$SAS_SANDBOX" = 1 ] || [ "$ALLOW_FUSE" = 1 ]; then
 		return 1
 	fi
 
@@ -254,7 +259,7 @@ _is_appimage() {
 		*ELF*RI|\
 		*ELF*AB) IS_APPIMAGE=1;;
 		''|*)    return 1     ;;
-	esac
+	esac 2>/dev/null
 }
 
 _check_xdgbase() {
@@ -305,7 +310,7 @@ _make_fakehome() {
 		FAKEHOME="$(dirname "$TARGET")/$APPNAME.home"
 	fi
 
-	mkdir -p "$FAKEHOME" 2>/dev/null || true
+	mkdir -p "$FAKEHOME"/.app 2>/dev/null || true
 
 	if ! _is_spooky "$FAKEHOME"; then
 		_error "Cannot use $1 as sandboxed home"
@@ -382,36 +387,43 @@ _make_mountpoint() {
 		mkdir -p "$MOUNT_POINT"
 	fi
 
-	( squashfuse -o offset="$offset" "$TARGET" "$MOUNT_POINT" 2>/dev/null \
-		|| dwarfs -o offset="$offset" "$TARGET" "$MOUNT_POINT" ) &
+	# common flags for squashfuse and dwarfs
+	set -- \
+	  -o ro,nodev,uid="$ID",gid="$GID" \
+	  -o offset="$offset" "$TARGET" "$MOUNT_POINT"
+	( squashfuse "$@" 2>/dev/null || dwarfs "$@" ) &
 	mountcheck=$!
 }
 
 _make_bwrap_array() {
 	set -u
 	set -- \
-	  --dir /app                  \
-	  --perms 0700                \
-	  --dir /run/user/"$ID"       \
-	  --bind "$FAKEHOME" "$HOME"  \
-	  --dev /dev                  \
-	  --proc /proc                \
-	  --unshare-user-try          \
-	  --unshare-pid               \
-	  --unshare-uts               \
-	  --die-with-parent           \
-	  --unshare-cgroup-try        \
-	  --new-session               \
-	  --unshare-ipc               \
-	  --setenv  TMPDIR    /tmp    \
-	  --setenv  HOME      "$HOME" \
-	  --ro-bind "$TARGET"   /app/"$APPNAME" \
+	  --dir /app                          \
+	  --perms 0700                        \
+	  --dir /run/user/"$ID"               \
+	  --bind "$FAKEHOME" "$HOME"          \
+	  --bind "$FAKEHOME"/.app /app        \
+	  --ro-bind "$TARGET" /app/"$APPNAME" \
+	  --proc /proc                        \
+	  --unshare-user-try                  \
+	  --unshare-pid                       \
+	  --unshare-uts                       \
+	  --die-with-parent                   \
+	  --unshare-cgroup-try                \
+	  --new-session                       \
+	  --unshare-ipc                       \
+	  --setenv SAS_SANDBOX 1              \
+	  --setenv  TMPDIR  /tmp              \
+	  --setenv  HOME    "$HOME"           \
 	  --setenv XDG_RUNTIME_DIR  /run/user/"$ID"
 
-	# TODO, add an option to allow FUSE in bwrap
-	set -- "$@" \
-	  --setenv SAS_SANDBOX 1 \
-	  --setenv APPIMAGE_EXTRACT_AND_RUN 1
+	if [ "$ALLOW_FUSE" = 1 ]; then
+		# CAP_SYS_ADMIN needed when allowing FUSE inside sandbox
+		set -- "$@" --cap-add CAP_SYS_ADMIN
+	else
+		# lets appimages run inside container without FUSE
+		set -- "$@" --setenv APPIMAGE_EXTRACT_AND_RUN 1
+	fi
 
 	for d in $DEFAULT_SYS_DIRS; do
 		if [ -d "$d" ]; then
@@ -423,15 +435,17 @@ _make_bwrap_array() {
 		SHARE_DEV_DRI=1
 		SHARE_DEV_INPUT=1
 		set -- "$@" --dev-bind-try /dev  /dev
+	else
+		set -- "$@" --dev /dev
 	fi
 	if [ "$SHARE_DEV_DRI" = 1 ]; then
 		set -- "$@" \
 		  --ro-bind-try  /usr/share/glvnd        /usr/share/glvnd     \
 		  --ro-bind-try  /usr/share/vulkan       /usr/share/vulkan    \
+		  --ro-bind-try  /sys/dev/char           /sys/dev/char        \
 		  --dev-bind-try /dev/nvidiactl          /dev/nvidiactl       \
 		  --dev-bind-try /dev/nvidia0            /dev/nvidia0         \
 		  --dev-bind-try /dev/nvidia-modeset     /dev/nvidia-modeset  \
-		  --ro-bind-try  /sys/dev/char           /sys/dev/char        \
 		  --ro-bind-try  /sys/devices/pci0000:00 /sys/devices/pci0000:00
 	fi
 	if [ "$SHARE_DEV_INPUT" = 1 ]; then
@@ -536,15 +550,17 @@ USER="${LOGNAME:-${USER:-${USERNAME}}}"
 if [ -f '/etc/passwd' ]; then
 	SAS_HOME="$(_get_sys_info home)"
 	SAS_ID="$(_get_sys_info id)"
+	SAS_GID="$(_get_sys_info gid)"
 	# export internal variables this way apps with
 	# restricted access to /etc can still use this
-	export SAS_HOME SAS_ID
+	export SAS_HOME SAS_ID SAS_GID
 fi
 
 HOME="$SAS_HOME"
 ID="$SAS_ID"
+GID="$SAS_GID"
 
-if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ]; then
+if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ] || [ -z "$GID" ]; then
 	_error "This system is fucked up"
 fi
 
@@ -618,6 +634,18 @@ while :; do
 			;;
 		--no-tmpdir)
 			SHARE_APP_TMPDIR=0
+			shift
+			;;
+		--allow-fuse)
+			ALLOW_FUSE=1
+			shift
+			;;
+		--allow-nested-caps)
+			if command -v bwrap.patched 1>/dev/null; then
+				BWRAPCMD="bwrap.patched"
+			else
+				_error "Missing patched bwrap needed for $1"
+			fi
 			shift
 			;;
 		--keep-mount|--preload)
@@ -818,4 +846,4 @@ if [ ! -x "$TARGET" ] && [ "$IS_TRUSTED_ONCE" = 1 ]; then
 fi
 
 # Do the thing!
-bwrap "$@"
+"$BWRAPCMD" "$@"

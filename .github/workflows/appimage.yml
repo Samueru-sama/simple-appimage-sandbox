@@ -31,6 +31,7 @@ jobs:
         UPINFO="gh-releases-zsync|$(echo $GITHUB_REPOSITORY | tr '/' '|')|latest|*$ARCH.AppImage.zsync"
 
         BWRAP_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/bubblewrap/official/bwrap/raw.dl"
+        BWRAP_PATCHED_URL="https://pkgs.pkgforge.dev/dl/bincache/x86_64-linux/bubblewrap/patched/bwrap/raw.dl"
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/nixpkgs/squashfuse/raw.dl"
         
@@ -38,9 +39,10 @@ jobs:
         cp -v ./sas.sh ./AppDir/AppRun
         cd ./AppDir
 
-        wget --retry-connrefused --tries=30 "$AWK_URL"        -O  ./bin/awk
-        wget --retry-connrefused --tries=30 "$BWRAP_URL"      -O  ./bin/bwrap
-        wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL" -O  ./bin/squashfuse
+        wget --retry-connrefused --tries=30 "$AWK_URL"           -O  ./bin/awk
+        wget --retry-connrefused --tries=30 "$BWRAP_URL"         -O  ./bin/bwrap
+        wget --retry-connrefused --tries=30 "$BWRAP_PATCHED_URL" -O  ./bin/bwrap.patched
+        wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL"    -O  ./bin/squashfuse
 
         chmod +x ./AppRun ./bin/*
         
