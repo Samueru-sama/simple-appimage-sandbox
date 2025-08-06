@@ -310,7 +310,7 @@ _make_fakehome() {
 		FAKEHOME="$(dirname "$TARGET")/$APPNAME.home"
 	fi
 
-	mkdir -p "$FAKEHOME" 2>/dev/null || true
+	mkdir -p "$FAKEHOME"/app 2>/dev/null || true
 
 	if ! _is_spooky "$FAKEHOME"; then
 		_error "Cannot use $1 as sandboxed home"
@@ -398,22 +398,23 @@ _make_mountpoint() {
 _make_bwrap_array() {
 	set -u
 	set -- \
-	  --dir /app                  \
-	  --perms 0700                \
-	  --dir /run/user/"$ID"       \
-	  --bind "$FAKEHOME" "$HOME"  \
-	  --proc /proc                \
-	  --unshare-user-try          \
-	  --unshare-pid               \
-	  --unshare-uts               \
-	  --die-with-parent           \
-	  --unshare-cgroup-try        \
-	  --new-session               \
-	  --unshare-ipc               \
-	  --setenv SAS_SANDBOX 1      \
-	  --setenv  TMPDIR  /tmp      \
-	  --setenv  HOME    "$HOME"   \
-	  --ro-bind "$TARGET"   /app/"$APPNAME" \
+	  --dir /app                          \
+	  --perms 0700                        \
+	  --dir /run/user/"$ID"               \
+	  --bind "$FAKEHOME" "$HOME"          \
+	  --bind "$FAKEHOME"/app /app         \
+	  --ro-bind "$TARGET" /app/"$APPNAME" \
+	  --proc /proc                        \
+	  --unshare-user-try                  \
+	  --unshare-pid                       \
+	  --unshare-uts                       \
+	  --die-with-parent                   \
+	  --unshare-cgroup-try                \
+	  --new-session                       \
+	  --unshare-ipc                       \
+	  --setenv SAS_SANDBOX 1              \
+	  --setenv  TMPDIR  /tmp              \
+	  --setenv  HOME    "$HOME"           \
 	  --setenv XDG_RUNTIME_DIR  /run/user/"$ID"
 
 	if [ "$ALLOW_FUSE" = 1 ]; then
