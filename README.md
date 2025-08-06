@@ -30,7 +30,9 @@ Options:
 
 * `--add-dir`, `--add-file` directory/file to give read access to. In order to add write access add `:rw` to the file, example `--add-dir /media/drive:rw`.
 
-* `--allow-fuse` Enables using FUSE inside the sandbox, only recommended for apps like Steam that need to launch other AppImages. NOTE: Using this option will switch the `bwrap` in the AppImage builds of `sas` to a [patched](https://github.com/VHSgunzo/bubblewrap-static/blob/main/bwrap.patch) bubblewrap that allows nested bwrap sessions.
+* `--allow-fuse` Enables using FUSE inside the sandbox, only recommended for apps like Steam that need to launch other big AppImages, when this option is NOT used `APPIMAGE_EXTRACT_AND_RUN=1` is set inside the sandbox so that AppImages can still work, albeit less efficiently.
+
+* `--allow-nested-caps` Using this option will switch the `bwrap` in the AppImage builds of `sas` to a [patched](https://github.com/VHSgunzo/bubblewrap-static/blob/main/bwrap.patch) bubblewrap that allows nested bwrap sessions.
 
 * `--no-config` Don't use existing configuration files, by default we try to give access to a directory matching the name of the given application in the following locations:  
 
