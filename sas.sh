@@ -564,6 +564,11 @@ if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ] || [ -z "$GID" ]; then
 	_error "This system is fucked up"
 fi
 
+# check if namespaces are disabled
+if [ -f "$SAS_CURRENTDIR"/detect-nonsense.sh ]; then
+	"$SAS_CURRENTDIR"/detect-nonsense.sh || true
+fi
+
 # get xdg vars
 BINDIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
 DATADIR="${XDG_DATA_HOME:-$HOME/.local/share}"
