@@ -34,6 +34,7 @@ jobs:
         BWRAP_PATCHED_URL="https://pkgs.pkgforge.dev/dl/bincache/x86_64-linux/bubblewrap/patched/bwrap/raw.dl"
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/nixpkgs/squashfuse/raw.dl"
+        FIXNAMESPACES_URL="https://raw.githubusercontent.com/Samueru-sama/fix-ubuntu-nonsense/refs/heads/main/detect-nonsense.sh"
         
         mkdir -p ./AppDir/bin
         cp -v ./sas.sh ./AppDir/AppRun
@@ -43,8 +44,8 @@ jobs:
         wget --retry-connrefused --tries=30 "$BWRAP_URL"         -O  ./bin/bwrap
         wget --retry-connrefused --tries=30 "$BWRAP_PATCHED_URL" -O  ./bin/bwrap.patched
         wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL"    -O  ./bin/squashfuse
-
-        chmod +x ./AppRun ./bin/*
+        wget --retry-connrefused --tries=30 "$FIXNAMESPACES_URL" -O ./detect-nonsense.sh
+        chmod +x ./AppRun ./detect-nonsense.sh ./bin/*
         
         VERSION="$(./AppRun --version)"
         [ -n "$VERSION" ]

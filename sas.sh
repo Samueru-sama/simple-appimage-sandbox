@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.1
+VERSION=1.2
 
 ADD_DIR=""
 ALLOW_FUSE=0
@@ -562,6 +562,11 @@ GID="$SAS_GID"
 
 if [ -z "$USER" ] || [ ! -d "$HOME" ] || [ -z "$ID" ] || [ -z "$GID" ]; then
 	_error "This system is fucked up"
+fi
+
+# check if namespaces are disabled
+if [ -f "$SAS_CURRENTDIR"/detect-nonsense.sh ]; then
+	"$SAS_CURRENTDIR"/detect-nonsense.sh || true
 fi
 
 # get xdg vars
