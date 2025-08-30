@@ -495,7 +495,7 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_NETWORK" = 1 ]; then
 		set -- "$@" \
 		  --share-net \
-		  --ro-bind-try "$RUNDIR"/systemd/resolve /run/systemd/resolve
+		  --ro-bind-try /run/systemd/resolve /run/systemd/resolve
 	else
 		set -- "$@" --unshare-net
 	fi
