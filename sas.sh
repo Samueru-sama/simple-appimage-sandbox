@@ -493,7 +493,9 @@ _make_bwrap_array() {
 		  --ro-bind-try "$RUNDIR"/"$WDISPLAY" /run/user/"$ID"/wayland-0
 	fi
 	if [ "$SHARE_APP_NETWORK" = 1 ]; then
-		set -- "$@" --share-net
+		set -- "$@" \
+		  --share-net \
+		  --ro-bind-try "$RUNDIR"/systemd/resolve /run/systemd/resolve
 	else
 		set -- "$@" --unshare-net
 	fi
