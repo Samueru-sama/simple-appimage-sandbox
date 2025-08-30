@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.2
+VERSION=1.3
 
 ADD_DIR=""
 ALLOW_FUSE=0
