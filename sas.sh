@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.3
+VERSION=1.4
 
 ADD_DIR=""
 ALLOW_FUSE=0
@@ -538,6 +538,45 @@ _make_bwrap_array() {
 	BWRAP_ARRAY=$(_save_array "$@")
 	set +u
 }
+
+_extract_only() {
+	APP=$1
+	APP_NAME=${1##*/}
+	SBX_DIR="$PWD"/."$APP_NAME".temp.extract.dir
+	TMP_APP="$SBX_DIR"/"$APP_NAME"
+	mkdir -p "$SBX_DIR"
+
+	shift
+	"$BWRAPCMD" \
+		--unshare-all                 \
+		--die-with-parent             \
+		--proc /proc                  \
+		--tmpfs /tmp                  \
+		--bind "$SBX_DIR" "$SBX_DIR"  \
+		--bind "$APP" "$TMP_APP"      \
+		--chdir "$SBX_DIR"            \
+		--                            \
+		"$TMP_APP" "$@"
+
+	if [ -d "$SBX_DIR"/AppDir ]; then
+		cp -r "$SBX_DIR"/AppDir "$PWD"/AppDir
+	elif [ -d "$SBX_DIR"/squashfs-root ]; then
+		cp -r "$SBX_DIR"/squashfs-root "$PWD"/AppDir
+	fi
+
+	if [ ! -d "$PWD"/squashfs-root ]; then
+		ln -s "$PWD"/AppDir "$PWD"/squashfs-root
+	fi
+
+	rm -rf "$SBX_DIR"
+}
+
+if [ -f "$1" ] && [ "$2" = --appimage-extract ]; then
+	>&2 printf '%s\n' "Running '$1 $2' in sandbox..."
+	_extract_only "$@"
+	>&2 printf '\n%s\n' "Suscesfully extracted files to $PWD/AppDir"
+	exit 0
+fi
 
 # check if running as appimage
 if [ -d "$SAS_CURRENTDIR"/bin ]; then

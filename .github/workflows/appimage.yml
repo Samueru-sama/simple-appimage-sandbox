@@ -25,64 +25,43 @@ jobs:
       run: |
         set -ex
         sudo apt install wget tar zsync
-        ARCH="$(uname -m)"
-        URUNTIME="https://github.com/VHSgunzo/uruntime/releases/latest/download/uruntime-appimage-dwarfs-$ARCH"
-        URUNTIME_LITE="https://github.com/VHSgunzo/uruntime/releases/latest/download/uruntime-appimage-dwarfs-lite-$ARCH"
-        UPINFO="gh-releases-zsync|$(echo $GITHUB_REPOSITORY | tr '/' '|')|latest|*$ARCH.AppImage.zsync"
+        ARCH=$(uname -m)
+        URUNTIME="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/uruntime2appimage.sh"
+
+        export URUNTIME_LINK="https://github.com/VHSgunzo/uruntime/releases/latest/download/uruntime-appimage-dwarfs-$ARCH"
+        export UPINFO="gh-releases-zsync|${GITHUB_REPOSITORY%/*}|${GITHUB_REPOSITORY#*/}|latest|*$ARCH.AppImage.zsync"
+        export URUNTIME_PRELOAD=1
 
         BWRAP_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/bubblewrap/official/bwrap/raw.dl"
         BWRAP_PATCHED_URL="https://pkgs.pkgforge.dev/dl/bincache/x86_64-linux/bubblewrap/patched/bwrap/raw.dl"
         AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/nixpkgs/squashfuse/raw.dl"
-        FIXNAMESPACES_URL="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/fix-namespaces.hook"
+        NOTIFY_URL="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/bin/notify"
+        FIXNAMESPACES_URL="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/hooks/fix-namespaces.hook"
         
         mkdir -p ./AppDir/bin
         cp -v ./sas.sh ./AppDir/AppRun
-        cd ./AppDir
-
-        wget --retry-connrefused --tries=30 "$AWK_URL"           -O  ./bin/awk
-        wget --retry-connrefused --tries=30 "$BWRAP_URL"         -O  ./bin/bwrap
-        wget --retry-connrefused --tries=30 "$BWRAP_PATCHED_URL" -O  ./bin/bwrap.patched
-        wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL"    -O  ./bin/squashfuse
-        wget --retry-connrefused --tries=30 "$FIXNAMESPACES_URL" -O  ./detect-nonsense.sh
-        chmod +x ./AppRun ./detect-nonsense.sh ./bin/*
-        
-        VERSION="$(./AppRun --version)"
-        [ -n "$VERSION" ]
-        echo "$VERSION" > ~/version
+        wget --retry-connrefused --tries=30 "$AWK_URL"           -O ./AppDir/bin/awk
+        wget --retry-connrefused --tries=30 "$BWRAP_URL"         -O ./AppDir/bin/bwrap
+        wget --retry-connrefused --tries=30 "$BWRAP_PATCHED_URL" -O ./AppDir/bin/bwrap.patched
+        wget --retry-connrefused --tries=30 "$SQUASHFUSE_URL"    -O ./AppDir/bin/squashfuse
+        wget --retry-connrefused --tries=30 "$NOTIFY_URL"        -O ./AppDir/bin/notify
+        wget --retry-connrefused --tries=30 "$FIXNAMESPACES_URL" -O ./AppDir/detect-nonsense.sh
+        chmod +x ./AppDir/AppRun ./AppDir/detect-nonsense.sh ./AppDir/bin/*
         
         # make appimage with uruntime
-        cd ..
-        wget --retry-connrefused --tries=30 "$URUNTIME" -O ./uruntime
-        wget --retry-connrefused --tries=30 "$URUNTIME_LITE" -O ./uruntime-lite
-        chmod +x ./uruntime*
-        
-        # Keep the mount point (speeds up launch time)
-        sed -i 's|URUNTIME_MOUNT=[0-9]|URUNTIME_MOUNT=0|' ./uruntime-lite
-        
-        # Add udpate info to runtime
-        echo "Adding update information \"$UPINFO\" to runtime..."
-        ./uruntime-lite --appimage-addupdinfo "$UPINFO"
-        
-        echo "Generating AppImage..."
-        ./uruntime --appimage-mkdwarfs -f      \
-        	--set-owner 0 --set-group 0          \
-        	--no-history --no-create-timestamp   \
-        	--compression zstd:level=22 -S26 -B8 \
-        	--header uruntime-lite               \
-        	-i ./AppDir -o ./sas-"$VERSION"-anylinux-"$ARCH".AppImage
-        
-        echo "Generating zsync file..."
-        zsyncmake *.AppImage -u *.AppImage
+        VERSION="$(./AppDir/AppRun --version)"
+        echo "$VERSION" > ~/version
+        export OUTNAME=sas-"$VERSION"-anylinux-"$ARCH".AppImage
 
-        mkdir dist
-        mv -v *.AppImage* dist/
+        wget --retry-connrefused --tries=30 "$URUNTIME" -O ./uruntime2appimage
+        chmod +x ./uruntime2appimage
+        ./uruntime2appimage
+
+        mkdir ./dist
+        mv -v ./*.AppImage* ./dist
+        mv -v ~/version     ./dist
         echo "All Done!"
-
-    - name: Check version file
-      run: |
-       cat ~/version
-       echo "APP_VERSION=$(cat ~/version)" >> "${GITHUB_ENV}"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4.6.2
@@ -90,49 +69,33 @@ jobs:
         name: AppImage-${{ matrix.arch }}
         path: 'dist'
 
-    - name: Upload version file
-      uses: actions/upload-artifact@v4.6.2
-      with:
-       name: version
-       path: ~/version
-       overwrite: true
-
   release:
-      if: ${{ github.ref_name == 'main' }}
-      needs: [build]
-      permissions: write-all
-      runs-on: ubuntu-latest
+    if: ${{ github.ref_name == 'main' }}
+    needs: [build]
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4.3.0
+        with:
+          pattern: AppImage-*
+          merge-multiple: true
 
-      steps:
-        - uses: actions/download-artifact@v4.3.0
-          with:
-            name: AppImage-x86_64
+      - name: Read version
+        run: |
+          cat version
+          echo "VERSION="$(cat version)" >> "${GITHUB_ENV}"
 
-        - uses: actions/download-artifact@v4.3.0
-          with:
-            name: AppImage-aarch64
-
-        - uses: actions/download-artifact@v4.3.0
-          with:
-            name: version
-
-        - name: Read version
-          run: |
-            cat version
-            export VERSION="$(cat version)"
-            echo "APP_VERSION=${VERSION}" >> "${GITHUB_ENV}"
-
-        #Version Release
-        - name: Continuous Releaser
-          uses: softprops/action-gh-release@v2.2.2
-          if: ${{ github.ref_name == 'main' }}
-          with:
-            name: "${{ env.APP_VERSION }}"
-            tag_name: "${{ env.APP_VERSION }}"
-            prerelease: false
-            draft: true
-            generate_release_notes: true
-            make_latest: true
-            files: |
-              *.AppImage*
-          continue-on-error: false
+      #Version Release
+      - name: Continuous Releaser
+        uses: softprops/action-gh-release@v2.2.2
+        if: ${{ github.ref_name == 'main' }}
+        with:
+          name: "${{ env.VERSION }}"
+          tag_name: "${{ env.VERSION }}"
+          prerelease: false
+          draft: true
+          generate_release_notes: true
+          make_latest: true
+          files: |
+            *.AppImage*
+        continue-on-error: false
