@@ -572,9 +572,9 @@ _extract_only() {
 }
 
 if [ -f "$1" ] && [ "$2" = --appimage-extract ]; then
-	>&2 printf '%s\n' "Running '$1 $2' in sandbox..."
+	>&2 printf '%s\n' "   Running '$1 $2' in sandbox..."
 	_extract_only "$@"
-	>&2 printf '\n%s\n' "Suscesfully extracted files to $PWD/AppDir"
+	>&2 printf '%s\n' "   Suscesfully extracted files to $PWD/AppDir"
 	exit 0
 fi
 
