@@ -83,7 +83,7 @@ jobs:
       - name: Read version
         run: |
           cat version
-          echo "VERSION="$(cat version)" >> "${GITHUB_ENV}"
+          echo "VERSION=$(cat version)" >> "${GITHUB_ENV}"
 
       #Version Release
       - name: Continuous Releaser
