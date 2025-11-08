@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.4
+VERSION=1.5
 
 ADD_DIR=""
 ALLOW_FUSE=0
@@ -540,43 +540,12 @@ _make_bwrap_array() {
 }
 
 _extract_only() {
-	APP=$1
-	APP_NAME=${1##*/}
-	SBX_DIR="$PWD"/."$APP_NAME".temp.extract.dir
-	TMP_APP="$SBX_DIR"/"$APP_NAME"
-	mkdir -p "$SBX_DIR"
-
-	shift
-	"$BWRAPCMD" \
-		--unshare-all                 \
-		--die-with-parent             \
-		--proc /proc                  \
-		--tmpfs /tmp                  \
-		--bind "$SBX_DIR" "$SBX_DIR"  \
-		--bind "$APP" "$TMP_APP"      \
-		--chdir "$SBX_DIR"            \
-		--                            \
-		"$TMP_APP" "$@"
-
-	if [ -d "$SBX_DIR"/AppDir ]; then
-		cp -r "$SBX_DIR"/AppDir "$PWD"/AppDir
-	elif [ -d "$SBX_DIR"/squashfs-root ]; then
-		cp -r "$SBX_DIR"/squashfs-root "$PWD"/AppDir
-	fi
-
+	mkdir -p "$PWD"/AppDir
+	cp -r "$MOUNT_POINT"/${1:-*} "$PWD"/AppDir
 	if [ ! -d "$PWD"/squashfs-root ]; then
 		ln -s "$PWD"/AppDir "$PWD"/squashfs-root
 	fi
-
-	rm -rf "$SBX_DIR"
 }
-
-if [ -f "$1" ] && [ "$2" = --appimage-extract ]; then
-	>&2 printf '%s\n' "   Running '$1 $2' in sandbox..."
-	_extract_only "$@"
-	>&2 printf '%s\n' "   Suscesfully extracted files to $PWD/AppDir"
-	exit 0
-fi
 
 # check if running as appimage
 if [ -d "$SAS_CURRENTDIR"/bin ]; then
@@ -849,6 +818,20 @@ done
 
 # get hash and prepare sandboxed home
 _get_hash "$TARGET"
+
+# check if we only want to extract files from app
+if [ "$1" = --appimage-extract ]; then
+	shift
+	>&2 printf '%s\n' "   Extracting '$TARGET'..."
+	_is_appimage "$TARGET"
+	_find_offset "$TARGET"
+	_make_mountpoint "$TARGET"
+	wait
+	_extract_only "$@"
+	>&2 printf '%s\n' "   Suscesfully extracted to '$PWD/AppDir'"
+	exit 0
+fi
+
 _make_fakehome
 
 # check if any of the xdg vars are spooky
