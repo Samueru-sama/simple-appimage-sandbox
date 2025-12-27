@@ -49,7 +49,7 @@ jobs:
         wget --retry-connrefused --tries=30 "$FIXNAMESPACES_URL" -O ./AppDir/detect-nonsense.sh
         chmod +x ./AppDir/AppRun ./AppDir/detect-nonsense.sh ./AppDir/bin/*
 
-        sed -i -e '/HOSTPATH//d' ./AppDir/bin/notify
+        sed -i -e '/HOSTPATH/d' ./AppDir/bin/notify
         
         # make appimage with uruntime
         VERSION="$(./AppDir/AppRun --version)"
