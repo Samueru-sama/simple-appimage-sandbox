@@ -434,7 +434,9 @@ _make_bwrap_array() {
 	if [ "$SHARE_DEV_ALL" = 1 ]; then
 		SHARE_DEV_DRI=1
 		SHARE_DEV_INPUT=1
-		set -- "$@" --dev-bind-try /dev  /dev
+		set -- "$@" \
+		  --dev-bind-try /dev       /dev \
+		  --ro-bind-try  /sys/class /sys/class
 	else
 		set -- "$@" --dev /dev
 	fi
