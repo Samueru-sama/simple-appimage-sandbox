@@ -354,17 +354,17 @@ _make_xdg_open_daemon() {
 		#!/bin/sh
 		lockfile="$RUNDIR"/sas-xdg-open-daemon.lock
 		cleanup_daemon() {
-		    rm -f "\$lockfile"
+			rm -f "\$lockfile"
 		}
 		if [ ! -f "\$lockfile" ]; then
-		    :> "\$lockfile"
-		    trap cleanup_daemon INT TERM EXIT
-		    while :; do
-		        read -r CMD < "$pipe"
-		        if [ -n "\$CMD" ]; then
-		            xdg-open "\$CMD"
-		        fi
-		    done
+			trap cleanup_daemon INT TERM EXIT
+			:> "\$lockfile"
+			while :; do
+				read -r CMD < "$pipe"
+				if [ -n "\$CMD" ]; then
+					xdg-open "\$CMD"
+				fi
+			done
 		fi
 		EOF
 		chmod +x "$SAS_XDG_OPEN_DAEMON"
