@@ -95,7 +95,7 @@ x11
 wayland
 ```
 
-* `--no-xdgopen` Do not sure the xdg-open of the host, by default sas makes a daemon that lets apps execute the host xdg-open outside the sandbox.
+* `--no-xdgopen` Do not use the xdg-open of the host, by default sas makes a daemon that lets apps execute the host xdg-open outside the sandbox.
   **Using this option does not mean that `xdg-open` is fully disabled, apps will still execute `xdg-open` inside the sandbox, which may fail to work.**
 
 * `--level <Level>` Set the sandbox level, only level 1 is supported and used by default, this flag is for compatiblity with aisap.    
