@@ -53,6 +53,7 @@ SHARE_DEV_ALL=1
 SAS_PRELOAD="${SAS_PRELOAD:-0}"
 SAS_CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
 SAS_XDG_OPEN_DAEMON=""
+SAS_XDG_OPEN_DAEMON_PID=""
 
 IS_APPIMAGE=0
 IS_TRUSTED_ONCE=0
@@ -113,6 +114,9 @@ _cleanup() {
 	fi
 	if [ -n "$APP_TMPDIR" ]; then
 		rm -rf "$APP_TMPDIR"
+	fi
+	if [ -n "$SAS_XDG_OPEN_DAEMON_PID" ]; then
+		kill "$SAS_XDG_OPEN_DAEMON_PID" 2>/dev/null || true
 	fi
 }
 
@@ -929,6 +933,7 @@ fi
 
 if [ -n "$SAS_XDG_OPEN_DAEMON" ]; then
 	"$SAS_XDG_OPEN_DAEMON" &
+	SAS_XDG_OPEN_DAEMON_PID=$!
 fi
 
 # Do the thing!
