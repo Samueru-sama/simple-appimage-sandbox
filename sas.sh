@@ -700,6 +700,10 @@ while :; do
 			SHARE_APP_TMPDIR=0
 			shift
 			;;
+		--no-xdgopen)
+			ALLOW_XDG_OPEN=0
+			shift
+			;;
 		--allow-fuse)
 			ALLOW_FUSE=1
 			shift
