@@ -118,6 +118,10 @@ _cleanup() {
 	if [ -n "$SAS_XDG_OPEN_DAEMON_PID" ]; then
 		kill "$SAS_XDG_OPEN_DAEMON_PID" 2>/dev/null || true
 	fi
+	# Clean up the daemon lockfile if it exists
+	if [ -n "$RUNDIR" ] && [ -f "$RUNDIR/sas-xdg-open-daemon.lock" ]; then
+		rm -f "$RUNDIR/sas-xdg-open-daemon.lock"
+	fi
 }
 
 trap _cleanup INT TERM EXIT
@@ -349,14 +353,18 @@ _make_xdg_open_daemon() {
 		cat <<-EOF > "$SAS_XDG_OPEN_DAEMON"
 		#!/bin/sh
 		lockfile="$RUNDIR"/sas-xdg-open-daemon.lock
+		cleanup_daemon() {
+			rm -f "\$lockfile"
+		}
 		if [ ! -f "\$lockfile" ]; then
-		    :> "\$lockfile"
-		    while :; do
-		        read -r CMD < "$pipe"
-		        if [ -n "\$CMD" ]; then
-		            xdg-open "\$CMD"
-		        fi
-		    done
+			trap cleanup_daemon INT TERM EXIT
+			:> "\$lockfile"
+			while :; do
+				read -r CMD < "$pipe"
+				if [ -n "\$CMD" ]; then
+					xdg-open "\$CMD"
+				fi
+			done
 		fi
 		EOF
 		chmod +x "$SAS_XDG_OPEN_DAEMON"
