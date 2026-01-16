@@ -348,7 +348,7 @@ _make_xdg_open_daemon() {
 	if [ ! -x "$SAS_XDG_OPEN_DAEMON" ]; then
 		cat <<-EOF > "$SAS_XDG_OPEN_DAEMON"
 		#!/bin/sh
-		lockfile=/tmp/.sas-daemon-lockfile
+		lockfile="$RUNDIR"/sas-xdg-open-daemon.lock
 		if [ ! -f "\$lockfile" ]; then
 		    :> "\$lockfile"
 		    while :; do
