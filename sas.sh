@@ -118,9 +118,8 @@ _cleanup() {
 	if [ -n "$SAS_XDG_OPEN_DAEMON_PID" ]; then
 		kill "$SAS_XDG_OPEN_DAEMON_PID" 2>/dev/null || true
 	fi
-	# Clean up the daemon lockfile if it exists
-	if [ -n "$RUNDIR" ] && [ -f "$RUNDIR/sas-xdg-open-daemon.lock" ]; then
-		rm -f "$RUNDIR/sas-xdg-open-daemon.lock"
+	if [ -f "$RUNDIR"/sas-xdg-open-daemon.lock ]; then
+		rm -f "$RUNDIR"/sas-xdg-open-daemon.lock
 	fi
 }
 
