@@ -111,6 +111,8 @@ cksum
 dwarfs
 grep
 head
+mkdir
+mkfifo
 od
 readlink
 squashfuse
