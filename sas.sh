@@ -12,9 +12,10 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.6
+VERSION=1.7
 
 ADD_DIR=""
+ALLOW_XDG_OPEN=1
 ALLOW_FUSE=0
 ALLOW_BINDIR=0
 ALLOW_DATADIR=0
@@ -51,6 +52,8 @@ SHARE_DEV_ALL=1
 
 SAS_PRELOAD="${SAS_PRELOAD:-0}"
 SAS_CURRENTDIR="$(cd "${0%/*}" && echo "$PWD")"
+SAS_XDG_OPEN_DAEMON=""
+SAS_XDG_OPEN_DAEMON_PID=""
 
 IS_APPIMAGE=0
 IS_TRUSTED_ONCE=0
@@ -111,6 +114,12 @@ _cleanup() {
 	fi
 	if [ -n "$APP_TMPDIR" ]; then
 		rm -rf "$APP_TMPDIR"
+	fi
+	if [ -n "$SAS_XDG_OPEN_DAEMON_PID" ]; then
+		kill "$SAS_XDG_OPEN_DAEMON_PID" 2>/dev/null || true
+	fi
+	if [ -f "$RUNDIR"/sas-xdg-open-daemon.lock ]; then
+		rm -f "$RUNDIR"/sas-xdg-open-daemon.lock
 	fi
 }
 
@@ -319,6 +328,46 @@ _make_fakehome() {
 	fi
 }
 
+_make_xdg_open_daemon() {
+	SAS_XDG_OPEN_DAEMON="$RUNDIR"/sas-xdg-open-daemon
+
+	pipe="$RUNDIR"/sas-xdg-open-pipe
+	xdgopen="$RUNDIR"/sas-xdg-open
+
+	if [ ! -p "$pipe" ]; then
+		mkfifo "$pipe"
+	fi
+
+	if [ ! -x "$xdgopen" ]; then
+		cat <<-'EOF' > "$xdgopen"
+		#!/bin/sh
+		p=$XDG_RUNTIME_DIR/sas-xdg-open-pipe
+		[ -p "$p" ] && echo "$@" >> "$p" && exit 0
+		exit 1
+		EOF
+		chmod +x "$xdgopen"
+	fi
+
+	if [ ! -x "$SAS_XDG_OPEN_DAEMON" ]; then
+		cat <<-EOF > "$SAS_XDG_OPEN_DAEMON"
+		#!/bin/sh
+		lockfile="$RUNDIR"/sas-xdg-open-daemon.lock
+		_remove_lockfile() { rm -f "\$lockfile"; }
+		if [ ! -f "\$lockfile" ]; then
+		    trap _remove_lockfile INT TERM EXIT
+		    :> "\$lockfile"
+		    while :; do
+		        read -r CMD < "$pipe"
+		        if [ -n "\$CMD" ]; then
+		            xdg-open "\$CMD"
+		        fi
+		    done
+		fi
+		EOF
+		chmod +x "$SAS_XDG_OPEN_DAEMON"
+	fi
+}
+
 _get_hash() {
 	HASH="$(tail -vc 1048576 "$1" | cksum)"
 	HASH="${HASH%% *}"
@@ -516,6 +565,13 @@ _make_bwrap_array() {
 		  --bind-try "$CACHEDIR"/"$APPNAME"  "$CACHEDIR"/"$APPNAME" \
 		  --bind-try "$CONFIGDIR"/"$APPNAME" "$CONFIGDIR"/"$APPNAME"
 	fi
+	if [ "$ALLOW_XDG_OPEN" = 1 ]; then
+		_make_xdg_open_daemon
+		set -- "$@" \
+			--ro-bind-try "$xdgopen" /bin/xdg-open     \
+			--ro-bind-try "$xdgopen" /usr/bin/xdg-open \
+			--ro-bind-try "$pipe"    /run/user/"$ID"/"${pipe##*/}"
+	fi
 
 	for d in $XDG_USER_DIRS $XDG_BASE_DIRS; do
 		ALLOW_VAR="ALLOW_$d"
@@ -651,6 +707,10 @@ while :; do
 			;;
 		--no-tmpdir)
 			SHARE_APP_TMPDIR=0
+			shift
+			;;
+		--no-xdgopen)
+			ALLOW_XDG_OPEN=0
 			shift
 			;;
 		--allow-fuse)
@@ -874,6 +934,11 @@ eval set -- "$BWRAP_ARRAY" -- "$ARRAY"
 
 if [ ! -x "$TARGET" ] && [ "$IS_TRUSTED_ONCE" = 1 ]; then
 	chmod +x "$TARGET" || true
+fi
+
+if [ -n "$SAS_XDG_OPEN_DAEMON" ]; then
+	"$SAS_XDG_OPEN_DAEMON" &
+	SAS_XDG_OPEN_DAEMON_PID=$!
 fi
 
 # Do the thing!
