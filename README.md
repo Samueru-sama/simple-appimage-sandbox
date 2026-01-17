@@ -107,6 +107,7 @@ Dependencies:
 ```
 awk
 bwrap
+cat
 cksum
 dwarfs
 grep
