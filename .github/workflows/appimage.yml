@@ -34,7 +34,7 @@ jobs:
 
         BWRAP_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/bubblewrap/official/bwrap/raw.dl"
         BWRAP_PATCHED_URL="https://pkgs.pkgforge.dev/dl/bincache/x86_64-linux/bubblewrap/patched/bwrap/raw.dl"
-        AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/mawk/raw.dl"
+        AWK_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/mawk/nixpkgs/mawk/raw.dl"
         SQUASHFUSE_URL="https://pkgs.pkgforge.dev/dl/bincache/$ARCH-linux/squashfuse/nixpkgs/squashfuse/raw.dl"
         NOTIFY_URL="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/bin/notify"
         FIXNAMESPACES_URL="https://raw.githubusercontent.com/pkgforge-dev/Anylinux-AppImages/refs/heads/main/useful-tools/hooks/fix-namespaces.hook"
