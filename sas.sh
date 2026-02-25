@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.7
+VERSION=1.8
 
 ADD_DIR=""
 ALLOW_XDG_OPEN=1
@@ -102,6 +102,13 @@ DEFAULT_SYS_DIRS="
 	/usr/sbin
 	/usr/share
 "
+
+# make sure apps prefer to use portals
+if [ -x /usr/libexec/xdg-desktop-portal ] \
+  || command -v xdg-desktop-portal 1>/dev/null; then
+	export GIO_USE_PORTALS="${GIO_USE_PORTALS:-1}"
+	export GTK_USE_PORTAL="${GTK_USE_PORTAL:-1}"
+fi
 
 _cleanup() {
 	set +u
