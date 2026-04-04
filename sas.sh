@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.9
+VERSION=2.0
 
 ADD_DIR=""
 ALLOW_XDG_OPEN=1
