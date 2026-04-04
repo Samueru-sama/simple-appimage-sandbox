@@ -122,9 +122,6 @@ _cleanup() {
 	if [ -n "$APP_TMPDIR" ]; then
 		rm -rf "$APP_TMPDIR"
 	fi
-	if [ -f "$RUNDIR"/sas-xdg-open-daemon.lock ]; then
-		rm -f "$RUNDIR"/sas-xdg-open-daemon.lock
-	fi
 }
 
 trap _cleanup INT TERM EXIT
