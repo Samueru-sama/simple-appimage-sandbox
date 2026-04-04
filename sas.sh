@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=1.8
+VERSION=1.9
 
 ADD_DIR=""
 ALLOW_XDG_OPEN=1
@@ -121,9 +121,6 @@ _cleanup() {
 	fi
 	if [ -n "$APP_TMPDIR" ]; then
 		rm -rf "$APP_TMPDIR"
-	fi
-	if [ -n "$SAS_XDG_OPEN_DAEMON_PID" ]; then
-		kill "$SAS_XDG_OPEN_DAEMON_PID" 2>/dev/null || true
 	fi
 	if [ -f "$RUNDIR"/sas-xdg-open-daemon.lock ]; then
 		rm -f "$RUNDIR"/sas-xdg-open-daemon.lock
@@ -358,11 +355,14 @@ _make_xdg_open_daemon() {
 	if [ ! -x "$SAS_XDG_OPEN_DAEMON" ]; then
 		cat <<-EOF > "$SAS_XDG_OPEN_DAEMON"
 		#!/bin/sh
+		parent_pid=\$$
 		lockfile="$RUNDIR"/sas-xdg-open-daemon.lock
-		_remove_lockfile() { rm -f "\$lockfile"; }
 		if [ ! -f "\$lockfile" ]; then
-		    trap _remove_lockfile INT TERM EXIT
 		    :> "\$lockfile"
+		    (
+		        trap 'kill -9 "\$parent_pid"; rm -f "\$lockfile"' TERM INT EXIT
+		        while :; do sleep 10; done
+		    ) &
 		    while :; do
 		        read -r CMD < "$pipe"
 		        if [ -n "\$CMD" ]; then
