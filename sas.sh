@@ -122,9 +122,6 @@ _cleanup() {
 	if [ -n "$APP_TMPDIR" ]; then
 		rm -rf "$APP_TMPDIR"
 	fi
-	if [ -n "$SAS_XDG_OPEN_DAEMON_PID" ]; then
-		kill "$SAS_XDG_OPEN_DAEMON_PID" 2>/dev/null || true
-	fi
 	if [ -f "$RUNDIR"/sas-xdg-open-daemon.lock ]; then
 		rm -f "$RUNDIR"/sas-xdg-open-daemon.lock
 	fi
@@ -359,7 +356,7 @@ _make_xdg_open_daemon() {
 		cat <<-EOF > "$SAS_XDG_OPEN_DAEMON"
 		#!/bin/sh
 		lockfile="$RUNDIR"/sas-xdg-open-daemon.lock
-		_remove_lockfile() { rm -f "\$lockfile"; }
+		_remove_lockfile() { rm -f "\$lockfile"; exit; }
 		if [ ! -f "\$lockfile" ]; then
 		    trap _remove_lockfile INT TERM EXIT
 		    :> "\$lockfile"
