@@ -625,7 +625,7 @@ if [ -f '/etc/passwd' ]; then
 	export SAS_HOME SAS_ID SAS_GID
 fi
 
-HOME="$SAS_HOME"
+HOME=$(_readlink -f "$SAS_HOME")
 ID="$SAS_ID"
 GID="$SAS_GID"
 
