@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=2.0
+VERSION=2.1
 
 ADD_DIR=""
 ALLOW_XDG_OPEN=1
@@ -625,7 +625,7 @@ if [ -f '/etc/passwd' ]; then
 	export SAS_HOME SAS_ID SAS_GID
 fi
 
-HOME="$SAS_HOME"
+HOME=$(_readlink -f "$SAS_HOME")
 ID="$SAS_ID"
 GID="$SAS_GID"
 
