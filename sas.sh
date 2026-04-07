@@ -178,7 +178,7 @@ basename() {
 # try to use shell builtins to resolve symlinks
 # else fallback to readlink, this saves +4ms
 _readlink() {
-	if [ "$1" = '-f' ] && cd "$2" 2>/dev/null; then
+	if [ "$1" = '-f' ] && cd -P "$2" 2>/dev/null; then
 		echo "$PWD"
 	else
 		command readlink "$@"
