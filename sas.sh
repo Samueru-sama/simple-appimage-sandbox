@@ -12,7 +12,7 @@ if [ "$SAS_DEBUG" = 1 ]; then
 	set -x
 fi
 
-VERSION=2.2
+VERSION=2.3
 
 ADD_DIR=""
 ALLOW_XDG_OPEN=1
@@ -492,13 +492,17 @@ _make_bwrap_array() {
 	fi
 	if [ "$SHARE_DEV_DRI" = 1 ]; then
 		set -- "$@" \
-		  --ro-bind-try  /usr/share/glvnd        /usr/share/glvnd     \
-		  --ro-bind-try  /usr/share/vulkan       /usr/share/vulkan    \
-		  --ro-bind-try  /sys/dev/char           /sys/dev/char        \
-		  --dev-bind-try /dev/nvidiactl          /dev/nvidiactl       \
-		  --dev-bind-try /dev/nvidia0            /dev/nvidia0         \
-		  --dev-bind-try /dev/nvidia-modeset     /dev/nvidia-modeset  \
-		  --ro-bind-try  /sys/devices/pci0000:00 /sys/devices/pci0000:00
+		  --ro-bind-try  /usr/share/glvnd           /usr/share/glvnd           \
+		  --ro-bind-try  /usr/share/vulkan          /usr/share/vulkan          \
+		  --ro-bind-try  /sys/dev/char              /sys/dev/char              \
+		  --dev-bind-try /dev/nvidiactl             /dev/nvidiactl             \
+		  --dev-bind-try /dev/nvidia0               /dev/nvidia0               \
+		  --dev-bind-try /dev/nvidia-modeset        /dev/nvidia-modeset        \
+		  --ro-bind-try  /sys/module/nvidia         /sys/module/nvidia         \
+		  --ro-bind-try  /sys/module/nvidia_drm     /sys/module/nvidia_drm     \
+		  --ro-bind-try  /sys/module/nvidia_modeset /sys/module/nvidia_modeset \
+		  --ro-bind-try  /sys/module/nvidia_uvm     /sys/module/nvidia_uvm     \
+		  --ro-bind-try  /sys/devices/pci0000:00    /sys/devices/pci0000:00
 	fi
 	if [ "$SHARE_DEV_INPUT" = 1 ]; then
 		set -- "$@" --ro-bind  /sys/class/input  /sys/class/input
