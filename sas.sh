@@ -558,7 +558,8 @@ _make_bwrap_array() {
 	if [ "$SHARE_APP_NETWORK" = 1 ]; then
 		set -- "$@" \
 		  --share-net \
-		  --ro-bind-try /run/systemd/resolve /run/systemd/resolve
+		  --ro-bind-try /run/systemd/resolve /run/systemd/resolve \
+		  --ro-bind-try /run/resolvconf/resolv.conf /etc/resolv.conf
 	else
 		set -- "$@" --unshare-net
 	fi
