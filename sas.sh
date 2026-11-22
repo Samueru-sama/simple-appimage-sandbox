@@ -444,11 +444,15 @@ _make_mountpoint() {
 		mkdir -p "$MOUNT_POINT"
 	fi
 
-	# common flags for squashfuse and dwarfs
+	# Common flags for both filesystem drivers.
 	set -- \
 	  -o ro,nodev,uid="$ID",gid="$GID" \
-	  -o offset="$offset" "$TARGET" "$MOUNT_POINT"
-	( squashfuse "$@" 2>/dev/null || dwarfs "$@" ) &
+	  "$TARGET" "$MOUNT_POINT"
+	# Try DwarFS first: offset=auto skips the ELF runtime and any SquashFS
+	# metadata sidecar. Pure SquashFS images fall back to squashfuse at the
+	# ELF offset.
+	( dwarfs -o offset=auto "$@" 2>/dev/null ||
+	  squashfuse -o offset="$offset" "$@" ) &
 	mountcheck=$!
 }
 
